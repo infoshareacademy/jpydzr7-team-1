@@ -14,6 +14,7 @@ def menu():
 
 
         if wybor == "1":
+            #TODO
             print("tu trzeba zrobić kod do dodawania budzetu do użytkownika")
         elif wybor == "2":
             print("tu trzeba zrobić kod do odejmowania wydatków od budżetu użytkownika")
