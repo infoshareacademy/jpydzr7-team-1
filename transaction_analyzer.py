@@ -83,15 +83,15 @@ class TransactionHistoryAnalyzer:
 
 if __name__ == "__main__":
     # TEST DATA
-    budget = TransactionHistoryAnalyzer()
+    test_budget = TransactionHistoryAnalyzer()
     #user_id = uuid.uuid4()
     user_id = uuid.UUID("47a74fbc-d4a7-4bce-ab6b-851c0420592d")
 
     # Pobieranie danych
-    expenses = budget.get_all_user_expenses(user_id)
-    incomes = budget.get_all_user_incomes(user_id)
-    operations = budget.get_user_transactions(user_id)
-    date_expenses = budget.get_user_expenses_by_date(user_id, "2025-02-01", "2025-02-28")
+    expenses = test_budget.get_all_user_expenses(user_id)
+    incomes = test_budget.get_all_user_incomes(user_id)
+    operations = test_budget.get_user_transactions(user_id)
+    date_expenses = test_budget.get_user_expenses_by_date(user_id, "2025-02-01", "2025-02-28")
 
     print("\nWydatki:", expenses)
     print("\nPrzychody:", incomes)
