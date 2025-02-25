@@ -4,6 +4,14 @@ import os
 
 
 class TransactionHistoryAnalyzer:
+    """
+    This class provides functionalities to initialize transaction data, load
+    existing records, and filter transactions based on user ID, type of
+    transaction (income or expense), and date ranges.
+    The transaction data
+    is stored in an Excel file and can be retrieved or manipulated
+    as needed.
+    """
     USER_ID_COLUMN = 'ID_urzytkownika'
     INCOME_COLUMN = 'Przychod'
     EXPENSE_COLUMN = 'Wydatek'
