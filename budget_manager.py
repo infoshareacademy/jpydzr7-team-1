@@ -6,6 +6,14 @@ from transaction_analyzer import TransactionHistoryAnalyzer
 
 
 class BudgetManager:
+    """
+    Manages budget operations such as income and expense recordings.
+
+    This class provides functionality to manage personal budgeting by allowing
+    users to record income and expenses. Data is stored in an Excel file which
+    is initialized and maintained by the class. Each record includes details
+    like user ID, date, description, category, and transaction amount.
+    """
     USER_ID_COLUMN = 'ID_urzytkownika'
     INCOME_COLUMN = 'Przychod'
     EXPENSE_COLUMN = 'Wydatek'
@@ -35,6 +43,13 @@ class BudgetManager:
 
     def add_expense(self, user_id: uuid.UUID, amount: float, date: str = None,
                     description: str = None, category: str = None):
+        """
+        Adds an expense record for the given user to the system.
+        This method accepts details of an expense, including the user ID, the monetary
+        amount, and optionally the date, description, and category, and records it
+        to the system. If the date is not provided, the current date will be used.
+        The expense data is saved into an Excel file for further record-keeping.
+        """
         if not isinstance(user_id, uuid.UUID):
             raise ValueError("ID_urzytkownika musi być typu UUID")
         if amount <= 0:
@@ -57,6 +72,14 @@ class BudgetManager:
 
     def add_income(self, user_id: uuid.UUID, amount: float, date: str = None,
                    description: str = None, category: str = None):
+        """
+        Adds an income record to the Excel for a specified user. The income record
+        contains details such as user ID, amount, optional description, category,
+        and the date of the income. In case the date is not provided, the system
+        uses the current date. This method validates that the user ID is of type
+        UUID and that the amount is greater than zero. The income record is stored
+        in an Excel file via the `_save_to_excel` method.
+        """
         if not isinstance(user_id, uuid.UUID):
             raise ValueError("ID_urzytkownika musi być typu UUID!")
         if amount <= 0:
