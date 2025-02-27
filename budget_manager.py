@@ -103,13 +103,14 @@ class BudgetManager:
 
 if __name__ == "__main__":
     # TEST DATA
-    # Tworzenie instancji testowego budżetu
+    # Tworzenie instancji testowego budżetu i historii
     test_budget = BudgetManager()
     test_history = TransactionHistoryAnalyzer()
 
+    # Tworzenie testowego UUID usera
     user_id = uuid.UUID("47a74fbc-d4a7-4bce-ab6b-851c0420592d")
 
-    # Dodawanie przykładowych danych
+    # Dodawanie przykładowych danych (odkomentuj aby dodać te dane do testowego excela):
     # test_budget.add_expense(user_id, 100.50, "2025-02-20", "Zakupy spożywcze", "Jedzenie")
     # test_budget.add_income(user_id, 2000.00, "2025-02-21", "Pensja miesięczna", "Praca")
 
