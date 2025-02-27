@@ -14,12 +14,9 @@ class BudgetManager:
 
     def __init__(self, file_path="data.xlsx"):
         self.file_path = file_path
-        # Inicjalizacja pliku Excel, jeśli nie istnieje
         if not os.path.exists(file_path):
             self._initialize_excel_file()
 
-        # Utworzenie instancji TransactionHistoryAnalyzer do filtrowania danych
-        self.analyzer = TransactionHistoryAnalyzer(file_path)
 
     def _initialize_excel_file(self):
         df = pd.DataFrame(columns=self.DEFAULT_COLUMNS)
@@ -61,9 +58,9 @@ class BudgetManager:
     def add_income(self, user_id: uuid.UUID, amount: float, date: str = None,
                    description: str = None, category: str = None):
         if not isinstance(user_id, uuid.UUID):
-            raise ValueError("ID_urzytkownika musi być typu UUID")
+            raise ValueError("ID_urzytkownika musi być typu UUID!")
         if amount <= 0:
-            raise ValueError("Kwota przychodu musi być większa od 0")
+            raise ValueError("Kwota przychodu musi być większa od 0 zł!")
 
         current_date = date if date else datetime.now().strftime("%Y-%m-%d")
 
@@ -87,11 +84,11 @@ if __name__ == "__main__":
     test_budget = BudgetManager()
     test_history = TransactionHistoryAnalyzer()
 
-    user_id = uuid.UUID(        "47a74fbc-d4a7-4bce-ab6b-851c0420592d")
+    user_id = uuid.UUID("47a74fbc-d4a7-4bce-ab6b-851c0420592d")
 
     # Dodawanie przykładowych danych
-    test_budget.add_expense(user_id, 100.50, "2025-02-20", "Zakupy spożywcze", "Jedzenie")
-    test_budget.add_income(user_id, 2000.00, "2025-02-21", "Pensja miesięczna", "Praca")
+    # test_budget.add_expense(user_id, 100.50, "2025-02-20", "Zakupy spożywcze", "Jedzenie")
+    # test_budget.add_income(user_id, 2000.00, "2025-02-21", "Pensja miesięczna", "Praca")
 
     expenses = test_history.get_all_user_expenses(user_id)
     incomes = test_history.get_all_user_incomes(user_id)
