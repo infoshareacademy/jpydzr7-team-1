@@ -1,9 +1,9 @@
-import uuid
+
 from email.policy import default
 
 import budget_input
 
-user_ID = uuid.UUID("47a74fbc-d4a7-4bce-ab6b-851c0420592d")
+
 
 def menu():
     #lista_akcji = ListaZakupow()
@@ -22,9 +22,9 @@ def menu():
 
 
         if choice == "1":
-            budget_input.take_input("income", user_ID)
+            budget_input.take_input("income")
         elif choice == "2":
-            budget_input.take_input("expense", user_ID)
+            budget_input.take_input("expense")
         # elif choice == "3":
         #     print("Tu trzeba zrobić funkcję która będzie cyklicznie odejmować wydatki od budżetu użytkownika ")
         elif choice == "3":
