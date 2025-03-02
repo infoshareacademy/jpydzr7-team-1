@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 import os
 from transaction_analyzer import TransactionHistoryAnalyzer
-
+import budget_input
 
 class BudgetManager:
     """
@@ -18,7 +18,7 @@ class BudgetManager:
     INCOME_COLUMN = 'Przychod'
     EXPENSE_COLUMN = 'Wydatek'
     DATE_COLUMN = 'Data'
-    DEFAULT_COLUMNS = ['ID', USER_ID_COLUMN, DATE_COLUMN, INCOME_COLUMN, EXPENSE_COLUMN, 'Opis', 'Kategoria']
+    DEFAULT_COLUMNS = ['ID', USER_ID_COLUMN, DATE_COLUMN, INCOME_COLUMN, EXPENSE_COLUMN, 'Opis', 'Kategoria',"Typ"]
 
     def __init__(self, file_path="data.xlsx"):
         self.file_path = file_path
@@ -42,7 +42,7 @@ class BudgetManager:
         df.to_excel(self.file_path, index=False)
 
     def add_expense(self, user_id: uuid.UUID, amount: float, date: str = None,
-                    description: str = None, category: str = None):
+                    description: str = None, category: str = None, frequency: str = None):
         """
         Adds an expense record for the given user to the system.
         This method accepts details of an expense, including the user ID, the monetary
@@ -64,14 +64,15 @@ class BudgetManager:
             self.INCOME_COLUMN: 0.0,
             self.EXPENSE_COLUMN: amount,
             'Opis': description if description else '',
-            'Kategoria': category if category else ''
+            'Kategoria': category if category else '',
+            'Typ': frequency if frequency else ''
         }
 
         self._save_to_excel(expense_data)
         return expense_data
 
     def add_income(self, user_id: uuid.UUID, amount: float, date: str = None,
-                   description: str = None, category: str = None):
+                    description: str = None, category: str = None, frequency: str = None):
         """
         Adds an income record to the Excel for a specified user. The income record
         contains details such as user ID, amount, optional description, category,
@@ -94,7 +95,8 @@ class BudgetManager:
             self.INCOME_COLUMN: amount,
             self.EXPENSE_COLUMN: 0.0,
             'Opis': description if description else '',
-            'Kategoria': category if category else ''
+            'Kategoria': category if category else '',
+            'Typ': frequency if frequency else ''
         }
 
         self._save_to_excel(income_data)
