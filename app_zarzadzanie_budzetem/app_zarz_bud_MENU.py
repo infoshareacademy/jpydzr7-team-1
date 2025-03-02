@@ -6,7 +6,7 @@ def menu():
               "1. Dodanie przychodów do budżetu\n"
               "2. Dodaj wydatki do budżetu\n"
               "3. Dodaj stałe wydatki lub dochody\n"
-              "4. Export raportu di pliku\n"
+              "4. Eksport raportu do pliku\n"
               "5. Przeliczenie Walut\n"
               "6. Historia Wydatków\n"
               "7. Zaplanuj budżet\n"
