@@ -55,7 +55,7 @@ class BudgetManager:
         if amount <= 0:
             raise ValueError("Kwota wydatku musi być większa od 0")
 
-        current_date = date if date else datetime.now().strftime("%Y-%m-%d")
+        current_date = date if date else datetime.now().strftime("%d-%m-%Y")
 
         expense_data = {
             'ID': self._get_next_id(),
@@ -85,7 +85,7 @@ class BudgetManager:
         if amount <= 0:
             raise ValueError("Kwota przychodu musi być większa od 0 zł!")
 
-        current_date = date if date else datetime.now().strftime("%Y-%m-%d")
+        current_date = date if date else datetime.now().strftime("%d-%m-%Y")
 
         income_data = {
             'ID': self._get_next_id(),
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     expenses = test_history.get_all_user_expenses(user_id)
     incomes = test_history.get_all_user_incomes(user_id)
     operations = test_history.get_user_transactions(user_id)
-    date_expenses = test_history.get_user_expenses_by_date(user_id, "2025-02-01", "2025-02-28")
+    date_expenses = test_history.get_user_expenses_by_date(user_id, "01-02-2025", "28-02-2025")
 
     print("\nWydatki:", expenses)
     print("\nPrzychody:", incomes)
