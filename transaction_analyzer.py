@@ -32,7 +32,7 @@ class TransactionHistoryAnalyzer:
         """Loads the data from the Excel file and converts date columns if needed."""
         df = pd.read_excel(self.data_file_path)
         if convert_dates:
-            df[self.DATE_COLUMN] = pd.to_datetime(df[self.DATE_COLUMN])
+            df[self.DATE_COLUMN] = pd.to_datetime(df[self.DATE_COLUMN], format="%d-%m-%Y")
         return df
 
     def _convert_date_range(self, start_date: str, end_date: str):
