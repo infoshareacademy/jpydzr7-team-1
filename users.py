@@ -140,7 +140,7 @@ class User:
                 continue
             else:
                 break
-        login = input("Podaj login. Jeżeli pole pozostanie puste, twój E-mail zostanie automatycznie przypisany jako login. Login:: ")
+        login = input("Podaj login. Jeżeli pole pozostanie puste, twój E-mail zostanie automatycznie przypisany jako login. Login: ")
         if not login:
             login = email
         password_user = input("Podaj haslo: ")
