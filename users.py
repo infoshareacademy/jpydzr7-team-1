@@ -126,7 +126,7 @@ class User:
             else:
                 print(f"Rodzina z ID {family_id} nie istnieje. Spróbuj ponownie.")
 
-        user_id = str(uuid.uuid4()).split('-')[0]
+        user_id = str(uuid.uuid4())
         name = input("Podaj imię: ")
         surname = input("Podaj nazwisko: ")
 
