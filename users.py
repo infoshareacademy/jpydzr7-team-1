@@ -350,8 +350,10 @@ class Kid(User):
 
 # Polecenia do TESTOW:
 
-# Wprowadzanie danych nowego uzytkownika:
-
+# # Wprowadzanie danych nowego uzytkownika:
+def menu_users():
+    print("Menu")
+#
 # status = input("Wybierz swoj status (1 = rodzic / 2 = dziecko): ")
 # if status == "1":
 #     User.create_user()

@@ -2,6 +2,8 @@
 from email.policy import default
 
 import budget_input
+import Kantor_przeliczanie_walut
+import users
 
 
 
@@ -17,6 +19,7 @@ def menu():
               "4. Przeliczenie Walut\n"
               "5. Historia Wydatków\n"
               "6. Zaplanuj budżet\n"
+              "7. Zarządzanie użytkownikami\n"
               "0. Wyjście z Aplikacji")
         choice = input("Wybierz opcję: ")
 
@@ -30,12 +33,15 @@ def menu():
         elif choice == "3":
             print("Tu trzeba zrobić funkcje exportowania do pliku raportu z budżetem ")
         elif choice == "4":
-            print("Tu trzeba zrobić funkcję do przeliczania walut")
+            Kantor_przeliczanie_walut.Kantor.menu()
         elif choice == "5":
             print("Tu trzeba zrobić funkcję do zapisywania historii wydatków")
         elif choice == "6":
-            print("Koniec planowanie/wydawania/zarządzania \n"
-                  "***Do ZoBaCzEnIA***")
+            print("Koniec planowanie/wydawania/zarządzania \n")
+        elif choice == "7":
+           users.menu_users()
+        elif choice == "0":
+            "***Do ZoBaCzEnIA***"
             break
         else:
             print("BŁĄD.... Spróbuj ponownie....")
