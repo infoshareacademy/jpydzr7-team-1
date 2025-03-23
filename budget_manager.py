@@ -38,7 +38,11 @@ class BudgetManager:
 
     def _save_to_excel(self, data):
         df = pd.read_excel(self.file_path)
-        df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
+        new_data = pd.DataFrame([data], columns=self.DEFAULT_COLUMNS)
+        for col in df.columns:
+            if col in new_data.columns:
+                new_data[col] = new_data[col].astype(df[col].dtype)
+        df = pd.concat([df, new_data], ignore_index=True)
         df.to_excel(self.file_path, index=False)
 
     def add_expense(self, user_id: uuid.UUID, amount: float, date: str = None,
@@ -55,7 +59,7 @@ class BudgetManager:
         if amount <= 0:
             raise ValueError("Kwota wydatku musi być większa od 0")
 
-        current_date = date if date else datetime.now().strftime("%Y-%m-%d")
+        current_date = date if date else datetime.now().strftime("%d-%m-%Y")
 
         expense_data = {
             'ID': self._get_next_id(),
@@ -86,7 +90,7 @@ class BudgetManager:
         if amount <= 0:
             raise ValueError("Kwota przychodu musi być większa od 0 zł!")
 
-        current_date = date if date else datetime.now().strftime("%Y-%m-%d")
+        current_date = date if date else datetime.now().strftime("%d-%m-%Y")
 
         income_data = {
             'ID': self._get_next_id(),
@@ -113,13 +117,13 @@ if __name__ == "__main__":
     user_id = uuid.UUID("47a74fbc-d4a7-4bce-ab6b-851c0420592d")
 
     # Dodawanie przykładowych danych (odkomentuj aby dodać te dane do testowego excela):
-    # test_budget.add_expense(user_id, 100.50, "2025-02-20", "Zakupy spożywcze", "Jedzenie")
-    # test_budget.add_income(user_id, 2000.00, "2025-02-21", "Pensja miesięczna", "Praca")
+    # test_budget.add_expense(user_id, 100.50, "20-02-2025", "Zakupy spożywcze", "Jedzenie")
+    # test_budget.add_income(user_id, 2000.00, "21-02-2025", "Pensja miesięczna", "Praca")
 
     expenses = test_history.get_all_user_expenses(user_id)
     incomes = test_history.get_all_user_incomes(user_id)
     operations = test_history.get_user_transactions(user_id)
-    date_expenses = test_history.get_user_expenses_by_date(user_id, "2025-02-01", "2025-02-28")
+    date_expenses = test_history.get_user_expenses_by_date(user_id, "01-02-2025", "28-02-2025")
 
     print("\nWydatki:", expenses)
     print("\nPrzychody:", incomes)
