@@ -9,7 +9,7 @@ import re
 class Family:
     def __init__(self, family_name: str):
         self.family_name = family_name
-        self.family_id = str(uuid.uuid4()).split('-')[0]
+        self.family_id = str(uuid.uuid4())
         print(f"Tworzona rodzina: {self.family_name}, ID: {self.family_id}")
 
     def to_dict(self) -> dict:
@@ -51,10 +51,34 @@ class Family:
         """Sprawdza, czy family_id istnieje w pliku families.xlsx"""
         file_path = 'dane_uzytkownikow.xlsx'
         if os.path.exists(file_path):
-            df = pd.read_excel(file_path, sheet_name='Families')
-            # Sprawdzamy, czy family_id znajduje się wśród family_id w pliku rodzin
-            return family_id in df['family_id'].values
-        return False
+            try:
+                df = pd.read_excel(file_path, sheet_name='Families')
+                return family_id in df['family_id'].values
+            except ValueError as e:
+                return False
+            except Exception as e:
+                print(f"Wystąpił błąd przy odczycie pliku: {e}")
+                return False
+        else:
+            return False
+    @staticmethod
+    def get_family_name_by_id(family_id: str) -> str:
+        """Zwraca nazwę rodziny na podstawie family_id"""
+        file_path = 'dane_uzytkownikow.xlsx'
+        if os.path.exists(file_path):
+            try:
+                df = pd.read_excel(file_path, sheet_name='Families')
+                row = df[df['family_id'] == family_id]
+                if not row.empty:
+                    return row['family_name'].values[0]
+                else:
+                    return "Nie znaleziono rodziny o podanym ID."
+            except ValueError as e:
+                return f"Błąd: Nie znaleziono arkusza 'Families' w pliku {file_path}."
+            except Exception as e:
+                return f"Wystąpił błąd przy odczycie pliku: {e}"
+        else:
+            return f"Błąd: Plik {file_path} nie istnieje."
 
 
 class User:
@@ -82,7 +106,32 @@ class User:
             }
 
     @staticmethod
-    def wygenerujHaslo(size, chars=string.ascii_letters + string.digits + string.punctuation):
+    def get_user_by_uuid(user_id):
+        file_path = 'dane_uzytkownikow.xlsx'
+
+        if os.path.exists(file_path):
+            with pd.ExcelFile(file_path) as xls:
+                if 'Users' in xls.sheet_names:
+                    df = pd.read_excel(xls, sheet_name='Users')
+
+                    user_id = str(user_id).strip()
+
+                    user_data = df[df['user_id'] == user_id]
+
+                    if not user_data.empty:
+                        return user_data.iloc[0]
+                    else:
+                        print(f"Nie znaleziono użytkownika o podanym UUID ({user_id}).")
+                        return None
+                else:
+                    print("Brak arkusza 'Users' w pliku.")
+                    return None
+        else:
+            print("Plik 'dane_uzytkownikow.xlsx' nie istnieje.")
+            return None
+
+    @staticmethod
+    def generate_password(size, chars=string.ascii_letters + string.digits + string.punctuation):
         return ''.join(random.choice(chars) for _ in range(size))
 
     @staticmethod
@@ -117,7 +166,9 @@ class User:
             family_id = input("Podaj identyfikator rodziny do której chcesz dołączyć. Jeżeli nie posiadasz jeszcze ID dla swojej rodziny, wciśnij enter: ")
 
             if Family.validate_family_id_exists(family_id):
-                print(f"Rodzina z ID {family_id} istnieje.")
+                nazwa = Family.get_family_name_by_id(str(family_id))
+                print(" ")
+                print(f"Dołączasz do rodziny >>>  {nazwa.upper()} ", "\n")
                 break
             if not family_id:
                 family = Family.create_family()
@@ -157,7 +208,7 @@ class User:
                 except ValueError:
                     print("Wybrana długość hasła musi byc liczbą. Spróbuj ponownie.")
             print("Twoje nowe hasło to: ")
-            password_user = User.wygenerujHaslo(haslo_generowane)
+            password_user = User.generate_password(haslo_generowane)
             print(password_user)
         h = hashlib.new('SHA256')
         h.update(password_user.encode())
@@ -174,6 +225,7 @@ class User:
             with pd.ExcelFile(file_path) as xls:
                 if 'Users' in xls.sheet_names:
                     df = pd.read_excel(xls, sheet_name='Users')
+                    df = df.fillna('')
 
                     df['login'] = df['login'].str.strip().str.lower()
 
@@ -265,12 +317,14 @@ class Kid(User):
 
     @staticmethod
     def create_kid():
-        user_id = str(uuid.uuid4()).split('-')[0]
+        user_id = str(uuid.uuid4())
         while True:
-            family_id = input( "Podaj identyfikator rodziny do której chcesz dołączyć. ")
+            family_id = input( "Podaj identyfikator rodziny do której chcesz dołączyć: ")
 
             if Family.validate_family_id_exists(family_id):
-                print(f"Rodzina z ID {family_id} istnieje.")
+                nazwa = Family.get_family_name_by_id(str(family_id))
+                print(" ")
+                print(f"Dołączasz do rodziny >>>  {nazwa.upper()} ", "\n")
                 break
             else:
                 print(f"Rodzina z ID {family_id} nie istnieje. Spróbuj ponownie.")
@@ -302,7 +356,7 @@ class Kid(User):
                 except ValueError:
                     print("Wybrana długość hasła musi byc liczbą. Spróbuj ponownie.")
             print("Twoje nowe hasło to: ")
-            password_user = Kid.wygenerujHaslo(haslo_generowane)
+            password_user = Kid.generate_password(haslo_generowane)
             print(password_user)
         h = hashlib.new('SHA256')
         h.update(password_user.encode())
@@ -323,31 +377,59 @@ class Kid(User):
         User.save_data_to_excel(new_kid)
         print("Dane użytkownika zostały pomyślnie zapisane.")
 
-# Polecenia do TESTOW:
 
-# Wprowadzanie danych nowego uzytkownika:
+def menu_users():
+    while True:
+        try:
+            print("Wybierz opcję z menu aby wykonać daną akcję:", " ",
+                  "1 - Dodaj nowego uzytkownika",
+                  "2 - Wyswietl dane uzytkownika podając user_id",
+                  "3 - Wyswietl dane uzytkownika podając login",
+                  "4 - Usuń konto",
+                  "5 - Przejdź do głównego Menu", sep = "\n")
 
-status = input("Wybierz swoj status (1 = rodzic / 2 = dziecko): ")
-if status == "1":
-    User.create_user()
-elif status == "2":
-    Kid.create_kid()
-else:
-    print("Bledna odpowiedz. Proszę wybierz '1' lub '2'.")
+            wybor = input("Wybieram opcję numer: ")
+            wybor1 = int(wybor)
+            if wybor1 == 1:
+                status = input("Wybierz swoj status (1 = rodzic / 2 = dziecko): ")
+                if status == "1":
+                    User.create_user()
+                elif status == "2":
+                    Kid.create_kid()
+                else:
+                    print("Bledna odpowiedz. Proszę wybierz '1' lub '2'.");
 
-# Wywietlanie danych uzytkownika
+            elif wybor1 == 2:
+                user_id = input("Podaj user_id użytkownika, ktorego dane chcesz wyświetlić: ")
+                user_data = User.get_user_by_uuid(user_id)
 
-# display_option = input("Czy chcesz wyświetlić dane użytkownika? (tak/nie): ")
-# if display_option.lower() == "tak":
-#     User.display_user_data()
+                if user_data is not None:
+                    user_data_dict = user_data.to_dict()
+                    print(user_data_dict)
+
+            elif wybor1 == 3:
+                User.display_user_data()
 
 
- # Usuwanie użytkownika
+            elif wybor1 == 4:
+                User.delete_user()
 
-# delete_option = input("Czy chcesz usunąć użytkownika? (tak/nie): ")
-# if delete_option.lower() == "tak":
-#     User.delete_user()
+            elif wybor1 == 5:
+                 break
+
+            else:
+                print("Taka opcja nie istnieje. Spróbuj ponownie wybierając z menu numer od 1 do 5.", end="\n")
+
+        except ValueError:
+            print("Proszę wpisać liczbę. Spróbuj ponownie.")
+
+if __name__ == "__main__":
+
+    menu_users()
 
 # Tworzenie nowej rodziny
 
 # Family.create_family()
+
+# nazwa = Family.get_family_name_by_id("7863ad23-7d0e-4c72-96bb-587bea83b89e")
+# print(nazwa)
