@@ -20,10 +20,10 @@ class Kantor:
         if response.status_code != 200:
             raise Exception(f"Error fetching exchange rates: {response.status_code} {response.text}")
 
-        print(response)
+        #print(response)
         data = response.json()
 
-        print(data)
+        #print(data)
 
         if "rates" not in data or to_currency not in data["rates"]:
             raise Exception("Currency not found in API response.")
@@ -53,9 +53,9 @@ class Kantor:
             print("2. Przelicz walutę")
             print("3. Wyjdź")
 
-            choise = input("Wybierz opcję: ")
+            choice = input("Wybierz opcję: ")
 
-            if choise == "1":
+            if choice == "1":
                 try:
                     currencies = Kantor.get_supported_currencies()
                     print("Supported currencies:")
@@ -64,18 +64,18 @@ class Kantor:
                 except Exception as e:
                     print(f"Error: {e}")
 
-            elif choise == "2":
+            elif choice == "2":
                 try:
                     amount = float(input("Wpisz kwotę którą chcesz przeliczyć "))
-                    from_currency = input("Wpisz w jakiej walucie wprowadziłeś kwotę do przeliczenia(domyślnie PLN): ").upper() or "PLN"
-                    to_currency = input("Wpisz na jaką walute chcesz przeliczyć: ").upper()
+                    from_currency = input("Wpisz w jakiej walucie wprowadziłeś kwotę do przeliczenia (domyślnie PLN): ").strip().upper() or "PLN"
+                    to_currency = input("Wpisz na jaką walute chcesz przeliczyć: ").strip().upper()
 
                     converted_amount = Kantor.convert_currency(amount, from_currency.upper(), to_currency)
                     print(f"{amount} {from_currency.upper()} jest równe {converted_amount:.2f} {to_currency}")
                 except Exception as e:
                     print(f"Error: {e}")
 
-            elif choise == "3":
+            elif choice == "3":
                 print("koniec przeliczania walut")
                 break
 
