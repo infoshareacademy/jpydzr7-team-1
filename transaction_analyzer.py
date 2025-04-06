@@ -32,12 +32,12 @@ class TransactionHistoryAnalyzer:
         """Loads the data from the Excel file and converts date columns if needed."""
         df = pd.read_excel(self.data_file_path)
         if convert_dates:
-            df[self.DATE_COLUMN] = pd.to_datetime(df[self.DATE_COLUMN])
+            df[self.DATE_COLUMN] = pd.to_datetime(df[self.DATE_COLUMN], format="%d-%m-%Y")
         return df
 
     def _convert_date_range(self, start_date: str, end_date: str):
         """Converts strings to pandas datetime objects for date comparison."""
-        return pd.to_datetime(start_date), pd.to_datetime(end_date)
+        return pd.to_datetime(start_date, dayfirst=True), pd.to_datetime(end_date, dayfirst=True)
 
     def _filter_transactions(self, data, user_id: uuid.UUID, column_filter=None, start_date=None, end_date=None):
         """Filters transactions by user, type (income/expenses), and optionally by date."""
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     expenses = test_budget.get_all_user_expenses(user_id)
     incomes = test_budget.get_all_user_incomes(user_id)
     operations = test_budget.get_user_transactions(user_id)
-    date_expenses = test_budget.get_user_expenses_by_date(user_id, "2025-02-01", "2025-02-28")
+    date_expenses = test_budget.get_user_expenses_by_date(user_id, "01-02-2025", "28-02-2025")
 
     print("\nWydatki:", expenses)
     print("\nPrzychody:", incomes)
