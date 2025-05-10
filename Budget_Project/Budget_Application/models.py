@@ -9,25 +9,23 @@ from django.db import models
 
 
 class DataTransaction(models.Model):
-    id_user = models.ForeignKey('Users', models.DO_NOTHING, db_column='id_user')
+    id_user = models.ForeignKey('Users', on_delete=models.CASCADE, db_column='id_user')
     data_transaction = models.DateField()
     income = models.FloatField(blank=True, null=True)
     expense = models.FloatField(blank=True, null=True)
-    description = models.IntegerField(blank=True, null=True)
+    description = models.CharField(blank=True, null=True)
     category = models.IntegerField(blank=True, null=True)
-    type = models.IntegerField(blank=True, null=True)
+    transaction_type = models.CharField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'DATA_TRANSACTION'
 
 
 class Families(models.Model):
-    famili_id = models.AutoField(primary_key=True)
-    famili_name = models.CharField(max_length=255)
+    family_id = models.AutoField(primary_key=True)
+    family_name = models.CharField(max_length=255)
 
     class Meta:
-        managed = False
         db_table = 'FAMILIES'
 
 
@@ -35,12 +33,11 @@ class Users(models.Model):
     user_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     surname = models.CharField(max_length=255)
-    email = models.CharField(unique=True, max_length=255)
+    email = models.EmailField(unique=True, max_length=255)
     login = models.CharField(unique=True, max_length=255)
     password = models.CharField(max_length=255)
-    famili = models.ForeignKey(Families, models.DO_NOTHING, blank=True, null=True)
+    family= models.ForeignKey(Families, models.DO_NOTHING, blank=True, null=True)
     parent_id = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'USERS'
