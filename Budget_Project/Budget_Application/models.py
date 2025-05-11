@@ -9,8 +9,9 @@ from django.db import models
 
 
 class DataTransaction(models.Model):
+    transaction_id = models.AutoField(primary_key=True)
     id_user = models.ForeignKey('Users', on_delete=models.CASCADE, db_column='id_user')
-    data_transaction = models.DateField()
+    transaction_date = models.DateField()
     income = models.FloatField(blank=True, null=True)
     expense = models.FloatField(blank=True, null=True)
     description = models.CharField(blank=True, null=True, max_length=255)
