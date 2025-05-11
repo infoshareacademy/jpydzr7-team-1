@@ -13,9 +13,9 @@ class DataTransaction(models.Model):
     data_transaction = models.DateField()
     income = models.FloatField(blank=True, null=True)
     expense = models.FloatField(blank=True, null=True)
-    description = models.CharField(blank=True, null=True)
-    category = models.IntegerField(blank=True, null=True)
-    transaction_type = models.CharField(blank=True, null=True)
+    description = models.CharField(blank=True, null=True, max_length=255)
+    category = models.CharField(blank=True, null=True, max_length=255)
+    transaction_type = models.CharField(blank=True, null=True, max_length=255)
 
     class Meta:
         db_table = 'DATA_TRANSACTION'
