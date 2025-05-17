@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Rodzina {{ family.family_name }} została utworzona!</h2>
+<p>ID Twojej rodziny to: {{ family.family_id }}</p>
+<p><a href="{% url 'create_user' %}">➕ Dodaj użytkownika</a></p>
+<p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</body>
+</html>

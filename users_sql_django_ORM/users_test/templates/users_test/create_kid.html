@@ -1,0 +1,8 @@
+<h2>Rejestracja dziecka</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Zarejestruj</button>
+
+    <p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</form>

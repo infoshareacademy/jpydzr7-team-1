@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8" />
+    <title>Strona główna</title>
+</head>
+<body>
+  <h1>Menu</h1>
+    <h2> Zaloguj się </h2>
+  <h2> Utwórz nową rodzinę </h2>
+  <p><a href="{% url 'create_family' %}">➕ Dodaj rodzinę</a></p>
+<h2> Dołacz do istniejącej rodziny </h2>
+<p><a href="{% url 'create_user' %}">➕ Dodaj pełnoletniego użytkownika</a></p>
+<p><a href="{% url 'create_kid' %}">➕ Dodaj dziecko</a></p>
+
+  <h2> Mam już konto </h2>
+<p>Wyswietl moje dane </p>
+<form method="get" action="{% url 'find_user' %}">
+    <label for="login">Podaj login:</label>
+    <input type="text" name="login" id="login" required>
+    <button type="submit">🔍 Wyszukaj</button>
+</form>
+</form>
+<p><a href="{% url 'delete_user' %}">➕ Usun użytkownika</a></p>
+    <ul>
+    {% for option in menu_options %}
+        <li>
+            {% if option.args %}
+                <a href="{% url option.url option.args.0 %}">{{ option.text }}</a>
+            {% else %}
+                <a href="{% url option.url %}">{{ option.text }}</a>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

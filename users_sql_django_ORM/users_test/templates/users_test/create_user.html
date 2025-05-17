@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Utwórz użytkownika</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+    {{ form.family }}
+
+<p><a href="{% url 'create_family' %}">➕ Utwórz nową rodzinę</a></p>
+  <button type="submit">Zarejestruj</button>
+</form>
+<p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</body>
+</html>

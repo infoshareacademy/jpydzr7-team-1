@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Informacje o użytkowniku</title>
+</head>
+<body>
+    <h2>Dane użytkownika:</h2>
+    <ul>
+        <li><strong>Imię:</strong> {{ user.name }}</li>
+        <li><strong>Nazwisko:</strong> {{ user.surname }}</li>
+        <li><strong>Email:</strong> {{ user.email }}</li>
+        <li><strong>Login:</strong> {{ user.login }}</li>
+        <li><strong>Rodzina:</strong> {{ user.family.family_name }}</li>
+        {% if user.parent %}
+        <li><strong>Rodzic:</strong> {{ user.parent.name }} {{ user.parent.surname }}</li>
+        {% endif %}
+    </ul>
+<p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</body>
+</html>

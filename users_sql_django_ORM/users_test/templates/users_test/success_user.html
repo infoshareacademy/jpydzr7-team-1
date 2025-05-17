@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Użytkownik {{ user.login }} został zapisany!</h2>
+<p>Nalezysz do rodziny: {{ family.family_name }}</p>
+<p><a href="{% url 'home' %}">➕ Zaloguj się</a></p>
+<p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</body>
+</html>
