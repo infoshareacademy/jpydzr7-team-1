@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Transakcje - {{ selected_category }}{% endblock %}
+
+{% block header_title %}Transakcje dla kategorii {{ selected_category }}{% endblock %}
+
+{% block content %}
+    <div class="mt-1">
+        <a href="{% url 'all-user-transactions' user_id %}" class="btn btn-outline-dark btn-sm">Wróć do wszystkich transakcji</a>
+    </div>
+<div class="container mt-4">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark fw-bold">
+                <tr>
+                    <th>Data</th>
+                    <th>Kwota</th>
+                    <th>Opis</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.transaction_date|date:"d.m.Y" }}</td>
+                    <td>
+                        {% if transaction.income %}
+                            {{ transaction.income|floatformat:2 }} zł
+                        {% elif transaction.expense %}
+                            -{{ transaction.expense|floatformat:2 }} zł
+                        {% endif %}
+                    </td>
+                    <td>{{ transaction.description }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Brak transakcji dla wybranej kategorii</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+<div class="mt-4">
+    <h6>Filtruj według innej kategorii</h6>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        {% if categories %}
+            {% for category in categories %}
+            <a href="{% url 'filtered-transactions' user_id|default:'' %}?category={{ category|urlencode }}"
+               class="badge badge-light {% if category == selected_category %}bg-dark{% else %}bg-secondary{% endif %} fs-8 pb-1 text-decoration-none">
+                {{ category|escape }}
+            </a>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Brak dostępnych kategorii do filtrowania.</p>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% endblock %}

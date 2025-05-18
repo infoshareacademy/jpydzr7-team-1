@@ -1,0 +1,42 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Wydatki{% endblock %}
+
+{% block menu_expenses %}active{% endblock %}
+
+{% block header_title %}Wydatki użytkownika{% endblock %}
+
+{% block content %}
+    {% if transactions %}
+        <table id="transactionsTable" class="table table-hover">
+            <thead class="table-dark fw-bold">
+                <tr>
+                    <th>ID</th>
+                    <th>Data</th>
+                    <th>Kwota</th>
+                    <th>Opis</th>
+                    <th>Kategoria</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.transaction_id }}</td>
+                        <td>{{ transaction.transaction_date|date:"d.m.Y" }}</td>
+                        <td class="text-danger">{{ transaction.expense|floatformat:2 }} zł</td>
+                        <td>{{ transaction.description|default:"-" }}</td>
+                        <td>{{ transaction.category|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+                <tr class="table-secondary fw-bold">
+                    <td colspan="2">Suma wydatków:</td>
+                    <td class="text-danger">{{ total_expense|floatformat:2 }} zł</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p>Brak wydatków dla tego użytkownika.</p>
+    {% endif %}
+{% endblock %}

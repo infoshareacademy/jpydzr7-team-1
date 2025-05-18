@@ -10,7 +10,8 @@ from .views import (
     ExpensesToDateView,
     IncomesFromDateView,
     IncomesToDateView,
-    UserTransactionsByDateRangeView
+    UserTransactionsByDateRangeView,
+    filtered_transactions
 )
 
 
@@ -28,4 +29,5 @@ urlpatterns = [
     path('transactions/user/<int:user_id>/expenses/end-date/', ExpensesToDateView.as_view(), name='expenses-to-date'),
     path('transactions/user/<int:user_id>/incomes/start-date/', IncomesFromDateView.as_view(), name='incomes-from-date'),
     path('transactions/user/<int:user_id>/incomes/end-date/', IncomesToDateView.as_view(), name='incomes-to-date'),
+    path('transactions/<int:user_id>/filter/', filtered_transactions, name='filtered-transactions'),
 ]
