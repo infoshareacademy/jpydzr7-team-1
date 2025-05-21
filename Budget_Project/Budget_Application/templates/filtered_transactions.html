@@ -16,6 +16,7 @@
                     <th>Data</th>
                     <th>Kwota</th>
                     <th>Opis</th>
+                    <th>Kategoria</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,12 +31,23 @@
                         {% endif %}
                     </td>
                     <td>{{ transaction.description }}</td>
+                    <td>{{ transaction.category}}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">Brak transakcji dla wybranej kategorii</td>
+                    <td colspan="4" class="text-center">Brak transakcji dla wybranej kategorii,
+                        <a href="{% url 'all-user-transactions' user_id %}">pokaż wszystkie.</a></td>
                 </tr>
                 {% endfor %}
+                {% if transactions %}
+                <tr class="table-secondary fw-bold">
+                    <td colspan="1">Suma:</td>
+                    <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ total_balance|floatformat:2 }} zł
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>

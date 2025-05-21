@@ -174,19 +174,43 @@ def get_unique_categories():
 
 
 def filtered_transactions(request, user_id):
-    """Widok filtrujący transakcje po kategorii"""
+    """Widok filtrujący transakcje po kategorii i datach"""
+    from datetime import datetime
+    from django.db.models import Q
+
     user = Users.objects.get(user_id=user_id)
     selected_category = request.GET.get('category', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
 
     # Podstawowe zapytanie
     query = Q(id_user=user_id)
 
-    # Dodanie filtra kategorii jeśli została wybrana
+    # Dodanie filtra kategorii, jeśli została wybrana
     if selected_category:
         query &= Q(category=selected_category)
 
+    # Dodanie filtra dat, jeśli zostały wybrane
+    if date_from:
+        date_from_obj = datetime.strptime(date_from, '%m/%d/%Y').date()
+        query &= Q(transaction_date__gte=date_from_obj)
+
+    if date_to:
+        date_to_obj = datetime.strptime(date_to, '%m/%d/%Y').date()
+        query &= Q(transaction_date__lte=date_to_obj)
+
     transactions = DataTransaction.objects.filter(query).order_by('-transaction_date')
     categories = get_unique_categories()
+
+    # Obliczanie sum i bilansu
+    total_income = sum(float(t.income or 0) for t in transactions)
+    total_expense = sum(float(t.expense or 0) for t in transactions)
+    total_balance = total_income - total_expense
+
+    # Debug
+    print(f"Query: {query}")
+    # print(f"Data od: {date_from}, Data do: {date_to}")
+    # print(f"Liczba znalezionych transakcji: {transactions.count()}")
 
     context = {
         'user': user,
@@ -194,6 +218,11 @@ def filtered_transactions(request, user_id):
         'transactions': transactions,
         'categories': categories,
         'selected_category': selected_category,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'total_balance': total_balance,
     }
     return render(request, 'filtered_transactions.html', context)
 

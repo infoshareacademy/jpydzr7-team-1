@@ -1,0 +1,47 @@
+.sidebar {
+    min-height: 100vh;
+    background-color: #212529;
+}
+
+/* Dodanie stylu dla bocznego menu (sticky) transakcji */
+.sticky-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Style dla inputów daty */
+.date-input-group {
+    position: relative;
+}
+
+.date-input-group .form-control {
+    padding-right: 35px;
+}
+
+.date-input-group .calendar-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+}
+
+/* Style dla datepickera (kalendarz w filtrach) */
+.datepicker {
+    border-radius: 0.25rem;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+.datepicker-dropdown {
+    margin-top: 10px;
+}
+
+.datepicker table tr td.active.active,
+.datepicker table tr td.active:hover.active {
+    background-color: #0d6efd !important;
+    background-image: none;
+}

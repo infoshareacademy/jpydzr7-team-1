@@ -38,13 +38,13 @@
                         <td>{{ transaction.category|default:"-" }}</td>
                     </tr>
                 {% endfor %}
-                <tr class="table-secondary fw-bold">
-                    <td colspan="2">Suma:</td>
-                    <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {{ total_balance|floatformat:2 }} zł
-                    </td>
-                    <td colspan="2"></td>
-                </tr>
+                    <tr class="table-secondary fw-bold">
+                        <td colspan="1">Suma:</td>
+                        <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ total_balance|floatformat:2 }} zł
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
             </tbody>
         </table>
 
