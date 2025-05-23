@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Usuń użytkownika</title>
+</head>
+<body>
+    <h2>Usuń użytkownika</h2>
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+        <label for="login">Podaj login:</label>
+        <input type="text" name="login" required><br><br>
+
+        <label for="password">Podaj hasło:</label>
+        <input type="password" name="password" required><br><br>
+
+        <button type="submit">Usuń</button>
+    </form>
+
+    {% if message %}
+        <p><strong>{{ message }}</strong></p>
+    {% endif %}
+
+<p><a href="{% url 'home' %}">➕ Powrót do strony głównej</a></p>
+</body>
+</html>

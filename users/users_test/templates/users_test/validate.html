@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Sprawdź rodzinę po ID</h2>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="family_id" placeholder="Wprowadź ID rodziny">
+    <button type="submit">Sprawdź</button>
+</form>
+</body>
+</html>

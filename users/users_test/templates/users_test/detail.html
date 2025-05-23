@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły rodziny</title>
+</head>
+<body>
+<h2>Szczegóły rodziny</h2>
+
+{% if family %}
+    <p>ID: {{ family.family_id }}</p>
+    <p>Nazwa: {{ family.family_name }}</p>
+{% else %}
+    <p>Nie znaleziono rodziny o ID {{ family.family_id }} .</p>
+{% endif %}
+
+</body>
+</html>
