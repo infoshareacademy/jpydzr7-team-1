@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pl">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .helptext {
+            font-size: 12px;
+            color: gray;
+            display: block;
+            margin-top: 4px;
+        }
+        .w-38 {
+            width: 30%;
+        }
+        .form-section {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'home' %}">BudgetApp</a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <ul class="navbar-nav">
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- FORMULARZ -->
+<div class="container ">
+   <div class="shadow p-4 mb-5 bg-body rounded form-section mx-auto">
+  <h2 class="text-center">Potwierdź usunięcie konta</h2> <br/>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.password }}<br>
+    {% for error in form.password.errors %}
+      <div class="text-danger">{{ error }}</div>
+    {% endfor %}
+    <p class="text-danger text-center">Pamiętaj, ta operacja jest nieodwracalna!<br> Wszystkie Twoje dane zostaną bezpowrotnie usunięte.</p>
+   <div class="d-flex justify-content-center mt-3">
+  <button type="submit" class="btn btn-danger">Usuń konto</button>
+  <a href="{% url 'dashboard' %}" class="btn btn-secondary ms-2">Anuluj</a>
+</div>
+  </form>
+</div>
+</div>
+
+</body>
+</html>
