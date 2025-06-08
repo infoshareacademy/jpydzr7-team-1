@@ -5,8 +5,8 @@ from django.template.response import TemplateResponse
 from .forms import IncomeTransactionsModelForm, ExpenseTransactionsModelForm
 
 
-@login_required
-def income_transaction_input(request):
+#@login_required
+def income_transaction_input(request, user_id):
     if request.method == 'POST':
         form = IncomeTransactionsModelForm(request.POST)
         if form.is_valid():
@@ -15,9 +15,9 @@ def income_transaction_input(request):
     else:
         form = IncomeTransactionsModelForm()
 
-    return render(request, 'transaction_input.html', {'form': form})
+    return render(request, 'transaction_input.html', {'form': form, 'type': "income"})
 
-@login_required
+#@login_required
 def expense_transaction_input(request):
     if request.method == 'POST':
         form = ExpenseTransactionsModelForm(request.POST)
@@ -27,4 +27,4 @@ def expense_transaction_input(request):
     else:
         form = ExpenseTransactionsModelForm()
 
-    return render(request, 'transaction_input.html', {'form': form})
+    return render(request, 'transaction_input.html', {'form': form, 'type': "expense"})

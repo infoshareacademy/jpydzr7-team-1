@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Registration</title>
+    <title>Details of the transaction</title>
 </head>
 <body>
-Please provide details of the transaction.
+Please provide details of the {{ type }}.
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

@@ -39,5 +39,7 @@ class Users(models.Model):
     family= models.ForeignKey(Families, models.DO_NOTHING, blank=True, null=True)
     parent_id = models.IntegerField(blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.name}"
     class Meta:
         db_table = 'USERS'
