@@ -28,27 +28,6 @@ urlpatterns = [
     path('incomes/', AllUserIncomesView.as_view(), name='all-user-incomes'),
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
 
-    # Transakcje według dat
-    path('transactions/<str:transaction_type>/by-date/',
-         UserTransactionsByDateRangeView.as_view(), name='user-transactions-by-daterange'),
-    path('transactions/user/<int:user_id>/date-range/',
-         AllUserTransactionsByDateRangeView.as_view(), name='all-user-transactions-date-range'),
-    path('transactions/user/<int:user_id>/from-date/',
-         AllTransactionsFromDateView.as_view(), name='transactions-from-date'),
-    path('transactions/user/<int:user_id>/to-date/',
-         AllTransactionsToDateView.as_view(), name='transactions-to-date'),
-
-    # Wydatki według dat
-    path('transactions/user/<int:user_id>/expenses/start-date/',
-         ExpensesFromDateView.as_view(), name='expenses-from-date'),
-    path('transactions/user/<int:user_id>/expenses/end-date/',
-         ExpensesToDateView.as_view(), name='expenses-to-date'),
-
-    # Dochody według dat
-    path('transactions/user/<int:user_id>/incomes/start-date/',
-         IncomesFromDateView.as_view(), name='incomes-from-date'),
-    path('transactions/user/<int:user_id>/incomes/end-date/',
-         IncomesToDateView.as_view(), name='incomes-to-date'),
 
     # ==================== UŻYTKOWNICY ====================
     path('user/<str:login>/', views.user_detail_view, name='user_detail'),
