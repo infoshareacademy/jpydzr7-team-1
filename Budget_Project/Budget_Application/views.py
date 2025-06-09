@@ -1,9 +1,4 @@
-from django.shortcuts import render
-from django.db.models import Q
-from django.http import JsonResponse
-from django.views import View
-from datetime import datetime
-from functools import wraps
+# Django built-in imports
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -12,12 +7,18 @@ from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.views import PasswordResetView
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.http import HttpResponseForbidden
+from django.db.models import Q
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code
+from django.views import View
+
+# Python standard library imports
+from datetime import datetime
+from functools import wraps
+
+# Local imports
 from .forms import (
     FamilyForm,
     KidForm,
@@ -30,7 +31,7 @@ from .forms import (
     UserForm,
     # LoginLookupForm,
 )
-
+from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code
 from .services import UserService
 
 
