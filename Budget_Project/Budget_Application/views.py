@@ -98,7 +98,7 @@ class AllUserTransactionsView(View):
             'user_id': request.user.user_id,
             'sort_order': sort_order,
             'categories': categories,
-            'selected_category': ''  # Domyślnie wyświetlamy transakcje dla wszystkich kat dla tego widoku
+            'selected_category': ''
         }
 
         return render(request, 'transactions_all.html', context)
@@ -115,11 +115,9 @@ class AllUserExpensesView(View):
     """
 
     def get(self, request):
-        # Sprawdź czy użytkownik jest zalogowany
         if not request.user.is_authenticated:
-            return redirect('login')  # Przekieruj do strony logowania
+            return redirect('login')
 
-        # Pobierz transakcje dla aktualnie zalogowanego użytkownika
         transactions = DataTransaction.objects.filter(
             id_user=request.user,
             expense__gt=0
@@ -168,11 +166,9 @@ class AllUserIncomesView(View):
     """
 
     def get(self, request):
-        # Sprawdź czy użytkownik jest zalogowany
         if not request.user.is_authenticated:
-            return redirect('login')  # Przekieruj do strony logowania
+            return redirect('login')
 
-        # Pobierz transakcje dla aktualnie zalogowanego użytkownika
         transactions = DataTransaction.objects.filter(
             id_user=request.user,
             income__gt=0
@@ -227,9 +223,8 @@ def filtered_transactions(request):
     from datetime import datetime
     from django.db.models import Q
 
-    # Sprawdź czy użytkownik jest zalogowany
     if not request.user.is_authenticated:
-        return redirect('login')  # Przekieruj do strony logowania
+        return redirect('login')
 
     user = request.user
     selected_category = request.GET.get('category', '')
@@ -283,7 +278,7 @@ def filtered_transactions(request):
     total_balance = total_income - total_expense
 
     # Debug
-    print(f"Query: {query}")
+    #print(f"Query: {query}")
     # print(f"Data od: {date_from}, Data do: {date_to}")
     # print(f"Liczba znalezionych transakcji: {transactions.count()}")
 
@@ -306,7 +301,6 @@ def filtered_transactions(request):
 @method_decorator(login_required, name='dispatch')
 class UserTransactionsByDateRangeView(View):
     def get(self, request, transaction_type):
-        # Sprawdź czy użytkownik jest zalogowany
         if not request.user.is_authenticated:
             return JsonResponse({
                 'error': 'Nieautoryzowany dostęp'
@@ -356,9 +350,6 @@ class UserTransactionsByDateRangeView(View):
 
         return JsonResponse({transaction_type: transactions_list}, safe=False)
 
-
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
 
 @method_decorator(login_required, name='dispatch')
 class AllUserTransactionsByDateRangeView(View):
