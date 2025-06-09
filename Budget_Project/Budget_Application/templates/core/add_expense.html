@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h2>Dodaj wydatek</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label">Kwota</label>
+        <input type="text" name="amount" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Kategoria</label>
+        <input type="text" name="category" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-danger">Dodaj</button>
+</form>
+<a href="{% url 'main_menu' %}" class="btn btn-link mt-3">← Powrót</a>
+{% endblock %}

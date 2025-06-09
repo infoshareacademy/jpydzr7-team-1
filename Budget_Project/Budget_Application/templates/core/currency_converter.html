@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">💱 Kantor – przelicz walutę</h2>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-4">
+            <label for="amount" class="form-label">Kwota</label>
+            <input type="number" step="0.01" name="amount" class="form-control" required value="{{ amount }}">
+        </div>
+
+        <div class="col-md-4">
+            <label for="from_currency" class="form-label">Z waluty</label>
+            <select name="from_currency" class="form-select" required>
+                {% for code, name in currencies.items %}
+                    <option value="{{ code }}" {% if code == from_currency %}selected{% endif %}>
+                        {{ code }} - {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label for="to_currency" class="form-label">Na walutę</label>
+            <select name="to_currency" class="form-select" required>
+                {% for code, name in currencies.items %}
+                    <option value="{{ code }}" {% if code == to_currency %}selected{% endif %}>
+                        {{ code }} - {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary mt-3">Przelicz</button>
+        </div>
+    </form>
+
+    {% if result %}
+        <div class="alert alert-success mt-4">
+            Wynik: <strong>{{ amount }} {{ from_currency }} = {{ result|floatformat:2 }} {{ to_currency }}</strong>
+        </div>
+    {% endif %}
+
+    <p class="mt-4">
+        <a href="{% url 'main_menu' %}" class="btn btn-outline-secondary">← Powrót do menu</a>
+    </p>
+</div>
+{% endblock %}

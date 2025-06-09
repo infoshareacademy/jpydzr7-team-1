@@ -61,4 +61,9 @@ urlpatterns = [
     path('reset/done/',
          auth_views.PasswordResetCompleteView.as_view(template_name='users_test/password_reset_complete.html'),
          name='password_reset_complete'),
+    #-----------MENU_APLIKACJI----------->
+    path('menu/', views.main_menu, name='main_menu'),
+    path('income/', views.add_income, name='add_income'),
+    path('expense/', views.add_expense, name='add_expense'),
+    path('currency/', views.currency_converter, name='currency_converter'),
     ]

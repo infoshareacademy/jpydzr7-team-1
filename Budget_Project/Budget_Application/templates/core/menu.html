@@ -1,0 +1,23 @@
+
+
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5" style="
+    background-image: url('{% static 'core/images/background.jpg' %}');
+    background-size: cover;
+    background-position: center;
+    border-radius: 10px;
+    min-height: 400px;
+    color: white;
+">
+    <h2 class="mb-4">📋 Menu Główne</h2>
+
+    <div class="d-grid gap-3">
+        <a href="{% url 'add_income' %}" class="btn btn-success btn-lg">➕ Dodaj przychód</a>
+        <a href="{% url 'add_expense' %}" class="btn btn-danger btn-lg">➖ Dodaj wydatek</a>
+        <a href="{% url 'currency_converter' %}" class="btn btn-primary btn-lg">💱 Kantor</a>
+    </div>
+</div>
+{% endblock %}

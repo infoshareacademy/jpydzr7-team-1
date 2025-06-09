@@ -29,6 +29,7 @@ from .forms import (
 )
 
 from .services import UserService
+import requests
 
 
 class AllUserTransactionsView(View):
@@ -749,3 +750,110 @@ class MyPasswordResetView(PasswordResetView):
     def form_valid(self, form):
         response = super().form_valid(form)
         return response
+
+
+def main_menu(request):
+    return render(request, 'core/menu.html')
+
+
+def add_income(request):
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        category = request.POST.get('cartegory')
+        print(f'Przychód: {amount} ({category})')
+        return render(request, 'core/thanks.html')
+    return render(request, 'core/add_income.html')
+
+def add_expense(request):
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        category = request.POST.get('category')
+        print(f'Wydatek: {amount} ({category})')
+        return render(request, 'core/thanks.html')
+    return render(request, 'core/add_expense.html')
+
+
+def get_supported_currencies():
+    url = "https://api.frankfurter.app/currencies"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception("Błąd pobierania walut.")
+    return response.json()
+
+
+def convert_currency(amount, from_currency, to_currency):
+    if from_currency == to_currency:
+        return amount
+
+    url = "https://api.frankfurter.app/latest"
+    params = {
+        "amount": amount,
+        "from": from_currency,
+        "to": to_currency
+    }
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise Exception("Błąd przeliczania waluty.")
+
+    data = response.json()
+    return data["rates"][to_currency]
+
+
+def currency_converter(request):
+    result = None
+    error = None
+    currencies = {}
+    from_currency = 'PLN'  # domyślna wartość
+    to_currency = ''
+    amount = ''
+
+    try:
+        currencies = get_supported_currencies()
+    except Exception as e:
+        error = str(e)
+
+    if request.method == 'POST':
+        try:
+            amount = request.POST.get('amount')
+            from_currency = request.POST.get('from_currency') or 'PLN'
+            to_currency = request.POST.get('to_currency')
+
+            result = convert_currency(float(amount), from_currency, to_currency)
+        except Exception as e:
+            error = str(e)
+
+    return render(request, 'core/currency_converter.html', {
+        'currencies': currencies,
+        'result': result,
+        'error': error,
+        'amount': amount,
+        'from_currency': from_currency,
+        'to_currency': to_currency,
+    })
+
+
+# def currency_converter(request):
+#     result = None
+#     error = None
+#     currencies = {}
+#
+#     try:
+#         currencies = get_supported_currencies()
+#     except Exception as e:
+#         error = str(e)
+#
+#     if request.method == 'POST':
+#         try:
+#             amount = float(request.POST.get('amount'))
+#             from_currency = request.POST.get('from_currency') or 'PLN'
+#             to_currency = request.POST.get('to_currency')
+#
+#             result = convert_currency(amount, from_currency, to_currency)
+#         except Exception as e:
+#             error = str(e)
+#
+#     return render(request, 'core/currency_converter.html', {
+#         'currencies': currencies,
+#         'result': result,
+#         'error': error
+#     })

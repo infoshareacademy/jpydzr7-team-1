@@ -76,7 +76,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'budget_application_database',
         'USER': 'root',
-        'PASSWORD': 'Soniapies_13',
+        'PASSWORD': 'root',
         'HOST': 'localhost',
         'PORT': '3306',
     }
