@@ -42,7 +42,7 @@ def menu():
         elif choice == "7":
            users.menu_users()
         elif choice == "0":
-            "***Do ZoBaCzEnIA***"
+            "***Do ZoBaCzEnIA***"   
             break
         else:
             print("BŁĄD.... Spróbuj ponownie....")
