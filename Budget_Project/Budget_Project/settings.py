@@ -74,9 +74,9 @@ PROJECT_NAME = 'budget_application_database'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'budget_application_database',
-        'USER': 'root',
-        'PASSWORD': 'Soniapies_13',
+        'NAME': 'budget_application_database10',
+        'USER': 'admin',
+        'PASSWORD': 'P@ssword1!',
         'HOST': 'localhost',
         'PORT': '3306',
     }

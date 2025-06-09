@@ -11,7 +11,7 @@ from django.conf import settings
 
 class DataTransaction(models.Model):
     transaction_id = models.AutoField(primary_key=True)
-    id_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='id_user')
+    id_user = models.ForeignKey('User', on_delete=models.CASCADE, db_column='id_user')
     transaction_date = models.DateField()
     income = models.FloatField(blank=True, null=True)
     expense = models.FloatField(blank=True, null=True)
@@ -30,7 +30,7 @@ def generate_access_code(length=6):
 
 
 class Family(models.Model):
-    family_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    family_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     family_name = models.CharField(max_length=255, unique=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='created_families')
     created_at = models.DateTimeField(auto_now_add=True)  # Data utworzenia

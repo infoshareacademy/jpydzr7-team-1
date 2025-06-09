@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views import View
-from .models import DataTransaction, Users
 from datetime import datetime
 from functools import wraps
 from django.conf import settings
@@ -16,7 +15,9 @@ from django.core.mail import send_mail
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
-from .models import User, Family, FamilyInvitation, JoinRequest, generate_access_code
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code
 from .forms import (
     FamilyForm,
     KidForm,
@@ -33,18 +34,24 @@ from .forms import (
 from .services import UserService
 
 
+@method_decorator(login_required, name='dispatch')
 class AllUserTransactionsView(View):
-    def get(self, request, user_id):
-        """
-        Handles the retrieval, processing, and rendering of transaction data for a specific user,
-        which includes filtering, sorting, and calculating financial summaries such as income,
-        expenses, and balance. Additionally, it prepares data for rendering in a web-based table.
-        """
+    """
+    Handles the retrieval, processing, and rendering of transaction data for the currently logged-in user,
+    which includes filtering, sorting, and calculating financial summaries such as income,
+    expenses, and balance. Additionally, it prepares data for rendering in a web-based table.
+    """
+
+    def get(self, request):
+        # Sprawdź czy użytkownik jest zalogowany
+        if not request.user.is_authenticated:
+            return redirect('login')  # Przekieruj do strony logowania
+
         # Pobiera parametr sortowania z URLa
         sort_order = request.GET.get('sort', 'date_desc')
 
-        # Pobiera wszystkie transakcje z DB dla danego userid
-        transactions = DataTransaction.objects.filter(id_user=user_id)
+        # Pobiera wszystkie transakcje z DB dla aktualnie zalogowanego użytkownika
+        transactions = DataTransaction.objects.filter(id_user=request.user)
 
         # Sortuje zgodnie z parametrem
         if sort_order == 'date_asc':
@@ -87,7 +94,7 @@ class AllUserTransactionsView(View):
             'total_income': total_income,
             'total_expense': total_expense,
             'total_balance': total_balance,
-            'user_id': user_id,
+            'user_id': request.user.user_id,
             'sort_order': sort_order,
             'categories': categories,
             'selected_category': ''  # Domyślnie wyświetlamy transakcje dla wszystkich kat dla tego widoku
@@ -96,22 +103,29 @@ class AllUserTransactionsView(View):
         return render(request, 'transactions_all.html', context)
 
 
+@method_decorator(login_required, name='dispatch')
 class AllUserExpensesView(View):
     """
     Provides functionality to retrieve, process, and render expense transaction
-    data for a given user. This includes calculating the total expenditures,
+    data for the currently logged-in user. This includes calculating the total expenditures,
     preparing a list of individual transactions, and retrieving unique
     transaction categories. It renders the data to the specified template
     for display.
     """
-    def get(self, request, user_id):
+
+    def get(self, request):
+        # Sprawdź czy użytkownik jest zalogowany
+        if not request.user.is_authenticated:
+            return redirect('login')  # Przekieruj do strony logowania
+
+        # Pobierz transakcje dla aktualnie zalogowanego użytkownika
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             expense__gt=0
         )
 
-        #Debagowanie
-        #print(f"Znaleziono {transactions.count()} wydatków dla użytkownika {user_id}")
+        # Debagowanie
+        # print(f"Znaleziono {transactions.count()} wydatków dla użytkownika {request.user.user_id}")
 
         expenses_list = []
         total_expense = 0
@@ -134,7 +148,7 @@ class AllUserExpensesView(View):
         context = {
             'transactions': expenses_list,
             'total_expense': total_expense,
-            'user_id': user_id,
+            'user_id': request.user.user_id,
             'categories': categories,
             'selected_category': ''
         }
@@ -142,22 +156,29 @@ class AllUserExpensesView(View):
         return render(request, 'expenses.html', context)
 
 
+@method_decorator(login_required, name='dispatch')
 class AllUserIncomesView(View):
     """
     This view is responsible for fetching all transactions related to incomes
-    for a given user, processing them, and rendering the corresponding HTML
+    for the currently logged-in user, processing them, and rendering the corresponding HTML
     template with the data. The data passed to the template includes the
     list of income transactions, their details, the total income, and other
     contextual information like available categories.
     """
-    def get(self, request, user_id):
+
+    def get(self, request):
+        # Sprawdź czy użytkownik jest zalogowany
+        if not request.user.is_authenticated:
+            return redirect('login')  # Przekieruj do strony logowania
+
+        # Pobierz transakcje dla aktualnie zalogowanego użytkownika
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             income__gt=0
         )
 
         # Debugowanie
-        #print(f"Znaleziono {transactions.count()} przychodów dla użytkownika {user_id}")
+        # print(f"Znaleziono {transactions.count()} przychodów dla użytkownika {request.user.user_id}")
 
         incomes_list = []
         total_income = 0
@@ -180,7 +201,7 @@ class AllUserIncomesView(View):
         context = {
             'transactions': incomes_list,
             'total_income': total_income,
-            'user_id': user_id,
+            'user_id': request.user.user_id,
             'categories': categories,
             'selected_category': ''
         }
@@ -199,19 +220,23 @@ def get_unique_categories():
     return DataTransaction.objects.values_list('category', flat=True).distinct().order_by('category')
 
 
-
-def filtered_transactions(request, user_id):
-    """Widok filtrujący transakcje po kategorii i datach"""
+@login_required
+def filtered_transactions(request):
+    """Widok filtrujący transakcje po kategorii i datach dla aktualnie zalogowanego użytkownika"""
     from datetime import datetime
     from django.db.models import Q
 
-    user = Users.objects.get(user_id=user_id)
+    # Sprawdź czy użytkownik jest zalogowany
+    if not request.user.is_authenticated:
+        return redirect('login')  # Przekieruj do strony logowania
+
+    user = request.user
     selected_category = request.GET.get('category', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
 
-    # Podstawowe zapytanie
-    query = Q(id_user=user_id)
+    # Podstawowe zapytanie dla aktualnie zalogowanego użytkownika
+    query = Q(id_user=request.user)
 
     # Dodanie filtra kategorii, jeśli została wybrana
     if selected_category:
@@ -219,12 +244,34 @@ def filtered_transactions(request, user_id):
 
     # Dodanie filtra dat, jeśli zostały wybrane
     if date_from:
-        date_from_obj = datetime.strptime(date_from, '%m/%d/%Y').date()
-        query &= Q(transaction_date__gte=date_from_obj)
+        try:
+            # Obsługa formatu YYYY-MM-DD (z kalendarza Bootstrap)
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                # Fallback dla starszego formatu MM/DD/YYYY
+                date_from_obj = datetime.strptime(date_from, '%m/%d/%Y').date()
+            except ValueError:
+                # Jeśli żaden format nie pasuje, ignoruj filtr daty
+                date_from_obj = None
+
+        if date_from_obj:
+            query &= Q(transaction_date__gte=date_from_obj)
 
     if date_to:
-        date_to_obj = datetime.strptime(date_to, '%m/%d/%Y').date()
-        query &= Q(transaction_date__lte=date_to_obj)
+        try:
+            # Obsługa formatu YYYY-MM-DD (z kalendarza Bootstrap)
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+        except ValueError:
+            try:
+                # Fallback dla starszego formatu MM/DD/YYYY
+                date_to_obj = datetime.strptime(date_to, '%m/%d/%Y').date()
+            except ValueError:
+                # Jeśli żaden format nie pasuje, ignoruj filtr daty
+                date_to_obj = None
+
+        if date_to_obj:
+            query &= Q(transaction_date__lte=date_to_obj)
 
     transactions = DataTransaction.objects.filter(query).order_by('-transaction_date')
     categories = get_unique_categories()
@@ -241,7 +288,7 @@ def filtered_transactions(request, user_id):
 
     context = {
         'user': user,
-        'user_id': user_id,
+        'user_id': user.user_id,
         'transactions': transactions,
         'categories': categories,
         'selected_category': selected_category,
@@ -254,8 +301,16 @@ def filtered_transactions(request, user_id):
     return render(request, 'filtered_transactions.html', context)
 
 
+
+@method_decorator(login_required, name='dispatch')
 class UserTransactionsByDateRangeView(View):
-    def get(self, request, user_id, transaction_type):
+    def get(self, request, transaction_type):
+        # Sprawdź czy użytkownik jest zalogowany
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'error': 'Nieautoryzowany dostęp'
+            }, status=401)
+
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
 
@@ -273,7 +328,7 @@ class UserTransactionsByDateRangeView(View):
             }, status=400)
 
         filter_params = {
-            'id_user': user_id,
+            'id_user': request.user,
             'transaction_date__gte': start_date,
             'transaction_date__lte': end_date
         }
@@ -301,16 +356,18 @@ class UserTransactionsByDateRangeView(View):
         return JsonResponse({transaction_type: transactions_list}, safe=False)
 
 
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+
+@method_decorator(login_required, name='dispatch')
 class AllUserTransactionsByDateRangeView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-
         if not all([start_date, end_date]):
             return JsonResponse({
                 'error': 'Wymagane parametry start_date i end_date'
             }, status=400)
-
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
@@ -318,13 +375,11 @@ class AllUserTransactionsByDateRangeView(View):
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__gte=start_date,
             transaction_date__lte=end_date
         )
-
         transactions_list = []
         for transaction in transactions:
             transactions_list.append({
@@ -336,31 +391,26 @@ class AllUserTransactionsByDateRangeView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'transactions': transactions_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class AllTransactionsFromDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         start_date = request.GET.get('start_date')
-
         if not start_date:
             return JsonResponse({
                 'error': 'Wymagany parametr start_date'
             }, status=400)
-
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__gte=start_date
         )
-
         transactions_list = []
         for transaction in transactions:
             transactions_list.append({
@@ -372,31 +422,26 @@ class AllTransactionsFromDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'transactions': transactions_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class AllTransactionsToDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         end_date = request.GET.get('end_date')
-
         if not end_date:
             return JsonResponse({
                 'error': 'Wymagany parametr end_date'
             }, status=400)
-
         try:
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__lte=end_date
         )
-
         transactions_list = []
         for transaction in transactions:
             transactions_list.append({
@@ -408,32 +453,27 @@ class AllTransactionsToDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'transactions': transactions_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class ExpensesFromDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         start_date = request.GET.get('start_date')
-
         if not start_date:
             return JsonResponse({
                 'error': 'Wymagany parametr start_date'
             }, status=400)
-
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__gte=start_date,
             expense__isnull=False
         )
-
         expenses_list = []
         for transaction in transactions:
             expenses_list.append({
@@ -444,32 +484,27 @@ class ExpensesFromDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'expenses': expenses_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class ExpensesToDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         end_date = request.GET.get('end_date')
-
         if not end_date:
             return JsonResponse({
                 'error': 'Wymagany parametr end_date'
             }, status=400)
-
         try:
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__lte=end_date,
             expense__isnull=False
         )
-
         expenses_list = []
         for transaction in transactions:
             expenses_list.append({
@@ -480,32 +515,27 @@ class ExpensesToDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'expenses': expenses_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class IncomesFromDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         start_date = request.GET.get('start_date')
-
         if not start_date:
             return JsonResponse({
                 'error': 'Wymagany parametr start_date'
             }, status=400)
-
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__gte=start_date,
             income__isnull=False
         )
-
         incomes_list = []
         for transaction in transactions:
             incomes_list.append({
@@ -516,32 +546,27 @@ class IncomesFromDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'incomes': incomes_list}, safe=False)
 
-
+@method_decorator(login_required, name='dispatch')
 class IncomesToDateView(View):
-    def get(self, request, user_id):
+    def get(self, request):
         end_date = request.GET.get('end_date')
-
         if not end_date:
             return JsonResponse({
                 'error': 'Wymagany parametr end_date'
             }, status=400)
-
         try:
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({
                 'error': 'Nieprawidłowy format daty. Użyj formatu YYYY-MM-DD'
             }, status=400)
-
         transactions = DataTransaction.objects.filter(
-            id_user=user_id,
+            id_user=request.user,
             transaction_date__lte=end_date,
             income__isnull=False
         )
-
         incomes_list = []
         for transaction in transactions:
             incomes_list.append({
@@ -552,7 +577,6 @@ class IncomesToDateView(View):
                 'category': transaction.category,
                 'transaction_type': transaction.transaction_type
             })
-
         return JsonResponse({'incomes': incomes_list}, safe=False)
 
 # ---------USERS---LOGIN---REGISTRATION------->
