@@ -1,4 +1,6 @@
 from django.urls import path
+from . import views
+from django.contrib.auth import views as auth_views
 from .views import (
     AllUserTransactionsView,
     AllUserExpensesView,
@@ -11,6 +13,7 @@ from .views import (
     IncomesFromDateView,
     IncomesToDateView,
     UserTransactionsByDateRangeView,
+    MyPasswordResetView,
     filtered_transactions
 )
 
@@ -30,4 +33,34 @@ urlpatterns = [
     path('transactions/user/<int:user_id>/incomes/start-date/', IncomesFromDateView.as_view(), name='incomes-from-date'),
     path('transactions/user/<int:user_id>/incomes/end-date/', IncomesToDateView.as_view(), name='incomes-to-date'),
     path('transactions/<int:user_id>/filter/', filtered_transactions, name='filtered-transactions'),
-]
+# ---------USERS---LOGIN---REGISTRATION------->
+    path("family/create/", views.create_family, name="create_family"),
+    path('create_user/', views.create_user, name='create_user'),
+    path('create_user_no_family/', views.register_no_family_user, name='create_user_no_family'),
+    path('success/<uuid:user_id>/', views.success_page, name='success_page'),
+    path('user/<str:login>/', views.user_detail_view, name='user_detail'),
+    path("create_kid/", views.create_kid, name="create_kid"),
+    path('', views.home, name='home'),
+    path('login/', views.custom_login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('create_user/', views.create_user, name='create_user'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('invitation/', views.invitation_fun, name='invitation'),
+    path('delete-account/', views.delete_account, name='delete_account'),
+    path('kid/<uuid:kid_id>/block/', views.block_kid, name='block_kid'),
+    path('kid/<uuid:kid_id>/unblock/', views.unblock_kid, name='unblock_kid'),
+    path('password_change/', views.change_password, name='password_change'),
+    path('join_family/', views.join_family_view, name='join_family'),
+    path('join_family_request/', views.join_family_request_view, name='join_family_request'),
+    path('join_requests/', views.view_join_requests, name='join_requests'),
+    path('remind_password/', MyPasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/done/',
+         auth_views.PasswordResetDoneView.as_view(template_name='users_test/password_reset_done.html'),
+         name='password_reset_done'),
+    path('reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(template_name='users_test/password_reset_confirm.html'),
+         name='password_reset_confirm'),
+    path('reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(template_name='users_test/password_reset_complete.html'),
+         name='password_reset_complete'),
+    ]
