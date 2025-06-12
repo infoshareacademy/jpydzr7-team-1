@@ -30,7 +30,7 @@ def generate_access_code(length=6):
 
 
 class Family(models.Model):
-    family_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    family_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     family_name = models.CharField(max_length=255, unique=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='created_families')
     created_at = models.DateTimeField(auto_now_add=True)  # Data utworzenia
