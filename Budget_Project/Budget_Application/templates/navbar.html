@@ -23,7 +23,20 @@
         <a class="btn btn-outline-primary" href="{% url 'all-user-transactions' %}">Wszystkie transakcje</a>
       {% endif %}
     </li>
-
+    <li class="nav-item">
+      {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'income' %}
+        <span class="btn btn-outline-primary disabled">Dodaj przychód</span>
+      {% else %}
+        <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'income' %}">Dodaj przychód</a>
+      {% endif %}
+    </li>
+        <li class="nav-item">
+      {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'expense' %}
+        <span class="btn btn-outline-primary disabled">Dodaj wydatek</span>
+      {% else %}
+        <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'expense' %}">Dodaj wydatek</a>
+      {% endif %}
+    </li>
         <li class="nav-item">
           <a class="btn btn-outline-danger" href="{% url 'logout' %}">Wyloguj się</a>
         </li>
