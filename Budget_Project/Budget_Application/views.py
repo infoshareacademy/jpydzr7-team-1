@@ -941,44 +941,7 @@ def add_transaction(request, type):
     return render(request, 'add_transaction.html', {'form': form, 'form_type': type})
 
 
-# def add_category(request, type):
-#     edit_id = request.GET.get('edit')
-#
-#     if request.method == 'POST':
-#             # Sprawdź, czy to usuwanie:
-#         if 'delete_id' in request.POST:
-#             delete_id = request.POST.get('delete_id')
-#             category_to_delete = get_object_or_404(Categories, pk=delete_id, user_id__family=request.user.family)
-#             category_to_delete.delete()
-#             messages.success(request, 'Kategoria została usunięta.')
-#             return redirect('add_category', type=type)
-#         # Pobierz instancję do edycji, jeśli edit_id jest podane, aby edytować, a nie tworzyć nowy
-#         instance = None
-#         if edit_id:
-#             instance = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
-#             edit_form = AddCategory(request.POST, user=request.user, form_type=type,  instance=instance)
-#             if edit_form.is_valid():
-#                 category = edit_form.save(commit=False)
-#                 category.user_id_id = request.user.user_id
-#                 category.save()
-#                 return redirect("add_category", type)  # nazwa widoku sukcesu
-#         else:
-#             form = AddCategory(user=request.user, form_type=type)
-#
-#     kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at')
-#     edit_id = request.GET.get('edit')
-#
-#     if edit_id:
-#          edytowana = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
-#          edit_form = AddCategory(instance=edytowana, user=request.user, form_type=type)
-#
-#     return render(request, 'add_category.html', {
-#         'form': form,
-#         'edit_form': edit_form,
-#         'kategorie': kategorie,
-#         'form_type': type,
-#         'edit_id': int(edit_id) if edit_id else None,
-#     })
+
 @login_required
 def add_category(request, type):
     edit_id = request.GET.get('edit')
