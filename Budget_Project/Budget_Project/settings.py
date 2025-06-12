@@ -1,6 +1,10 @@
 
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Załaduj zmienne z pliku .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,9 +78,9 @@ PROJECT_NAME = 'budget_application_database'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'budget_application_database',
-        'USER': 'root',
-        'PASSWORD': 'Soniapies_13',
+        'NAME': 'budget_application_database10',
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
         'HOST': 'localhost',
         'PORT': '3306',
     }
