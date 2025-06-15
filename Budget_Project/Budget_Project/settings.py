@@ -78,7 +78,7 @@ PROJECT_NAME = 'budget_application_database'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'budget_application_database10',
+        'NAME': os.getenv('DB_NAME', 'budget_application_database'),
         'USER': os.getenv('DB_USER', 'root'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
         'HOST': 'localhost',
