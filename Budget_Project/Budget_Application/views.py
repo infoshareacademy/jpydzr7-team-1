@@ -104,6 +104,145 @@ class AllUserTransactionsView(View):
         return render(request, 'transactions_all.html', context)
 
 
+class AllFamilyTransactionsView(View):
+    """
+    Handles the retrieval, processing, and rendering of transaction data for the entire family
+    of the currently logged-in user, which includes filtering, sorting, and calculating
+    financial summaries such as income, expenses, and balance. Additionally, it prepares
+    data for rendering in a web-based table with user role information.
+    """
+
+    def get(self, request):
+        # Sprawdź czy użytkownik jest zalogowany
+        if not request.user.is_authenticated:
+            return redirect('login')  # Przekieruj do strony logowania
+
+        # Pobiera parametr sortowania z URLa
+        sort_order = request.GET.get('sort', 'date_desc')
+
+        # Sprawdź czy użytkownik należy do rodziny
+        if request.user.family_id is None:
+            # Użytkownik nie należy do rodziny - pobieramy tylko jego transakcje
+            transactions = DataTransaction.objects.filter(id_user=request.user).select_related('id_user')
+        else:
+            # Użytkownik należy do rodziny - pobieramy transakcje wszystkich członków rodziny
+            family_members = User.objects.filter(family_id=request.user.family_id)
+            transactions = DataTransaction.objects.filter(
+                id_user__in=family_members
+            ).select_related('id_user')
+
+        # Sortuje zgodnie z parametrem
+        if sort_order == 'date_asc':
+            transactions = transactions.order_by('transaction_date', 'id_user__name')
+        elif sort_order == 'user_asc':
+            transactions = transactions.order_by('id_user__name', 'transaction_date')
+        elif sort_order == 'user_desc':
+            transactions = transactions.order_by('-id_user__name', 'transaction_date')
+        else:  # date_desc (domyślne)
+            transactions = transactions.order_by('-transaction_date', 'id_user__name')
+
+        transactions_list = []
+        total_income = 0
+        total_expense = 0
+        user_summaries = {}  # Słownik do przechowywania sum dla każdego użytkownika
+
+        for transaction in transactions:
+            income = float(transaction.income) if transaction.income else None
+            expense = float(transaction.expense) if transaction.expense else None
+
+            # Oblicza sumy dla przychodów i wydatków
+            if income:
+                total_income += income
+            if expense:
+                total_expense += expense
+
+            # Obliczenia per użytkownik
+            user_key = f"{transaction.id_user.name} {transaction.id_user.surname}"
+            if user_key not in user_summaries:
+                user_summaries[user_key] = {
+                    'income': 0,
+                    'expense': 0,
+                    'role': transaction.id_user.role
+                }
+
+            if income:
+                user_summaries[user_key]['income'] += income
+            if expense:
+                user_summaries[user_key]['expense'] += expense
+
+            transactions_list.append({
+                'transaction_id': transaction.transaction_id,
+                'transaction_date': transaction.transaction_date,
+                'income': income,
+                'expense': expense,
+                'description': transaction.description,
+                'category': transaction.category,
+                'transaction_type': transaction.transaction_type,
+                'user_id': transaction.id_user.user_id,
+                'user_name': transaction.id_user.name,
+                'user_surname': transaction.id_user.surname,
+                'user_role': transaction.id_user.role,
+                'user_full_name': f"{transaction.id_user.name} {transaction.id_user.surname}",
+                'is_current_user': transaction.id_user == request.user
+            })
+
+        # Oblicza bilans całkowity
+        total_balance = total_income - total_expense
+
+        # Oblicza bilanse per użytkownik
+        for user_key in user_summaries:
+            user_summaries[user_key]['balance'] = user_summaries[user_key]['income'] - user_summaries[user_key][
+                'expense']
+
+        # Pobiera unikalne kategorie z transakcji rodzinnych
+        categories = self.get_family_categories(request.user)
+
+        # Pobiera listę członków rodziny
+        family_members_list = self.get_family_members(request.user)
+
+        context = {
+            'transactions': transactions_list,
+            'total_income': total_income,
+            'total_expense': total_expense,
+            'total_balance': total_balance,
+            'user_summaries': user_summaries,
+            'family_members': family_members_list,
+            'user_id': request.user.user_id,
+            'sort_order': sort_order,
+            'categories': categories,
+            'selected_category': '',
+            'is_family_view': request.user.family_id is not None,
+            'family_name': request.user.family.family_name if request.user.family else None,
+        }
+
+        return render(request, 'family_transactions_all.html', context)
+
+    def get_family_categories(self, user):
+        """
+        Pobiera unikalne kategorie dla transakcji rodzinnych.
+        """
+        if user.family_id is None:
+            transactions = DataTransaction.objects.filter(id_user=user)
+        else:
+            family_members = User.objects.filter(family_id=user.family_id)
+            transactions = DataTransaction.objects.filter(id_user__in=family_members)
+
+        categories = transactions.values_list('category', flat=True).distinct()
+        return [cat for cat in categories if cat]  # Filtruje None/puste wartości
+
+    def get_family_members(self, user):
+        """
+        Pobiera listę członków rodziny z podstawowymi informacjami.
+        """
+        if user.family_id is None:
+            return [{'user_id': user.user_id, 'name': user.name, 'surname': user.surname, 'role': user.role}]
+
+        family_members = User.objects.filter(family_id=user.family_id).values(
+            'user_id', 'name', 'surname', 'role'
+        )
+        return list(family_members)
+
+
 @method_decorator(login_required, name='dispatch')
 class AllUserExpensesView(View):
     """
@@ -156,6 +295,126 @@ class AllUserExpensesView(View):
 
 
 @method_decorator(login_required, name='dispatch')
+class AllFamilyExpensesView(View):
+    """
+    Provides functionality to retrieve, process, and render expense transaction
+    data for all family members of the currently logged-in user. This includes
+    calculating the total expenditures for the entire family, preparing a list
+    of individual transactions, and retrieving unique transaction categories.
+    It renders the data to the specified template for display.
+    """
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Pobierz wszystkich członków rodziny
+        family_members = self.get_family_members(request.user)
+        if not family_members:
+            # Jeśli użytkownik nie ma rodziny, wyświetl tylko jego wydatki
+            transactions = DataTransaction.objects.filter(
+                id_user=request.user,
+                expense__gt=0
+            )
+        else:
+            # Pobierz wydatki dla wszystkich członków rodziny
+            transactions = DataTransaction.objects.filter(
+                id_user__in=[request.user] + list(family_members),
+                expense__gt=0
+            )
+
+        # Przetwarzanie transakcji
+        expenses_list = []
+        total_expense = 0
+        member_expenses = {}  # Słownik do przechowywania sum wydatków dla każdego członka
+
+        for transaction in transactions:
+            expense = float(transaction.expense) if transaction.expense else 0
+            total_expense += expense
+
+            # Obliczanie wydatków per członek rodziny
+            user_key = transaction.id_user.user_id
+            user_name = f"{transaction.id_user.name} {transaction.id_user.surname}"
+
+            if user_key not in member_expenses:
+                member_expenses[user_key] = {
+                    'user_name': transaction.id_user.name,
+                    'user_surname': transaction.id_user.surname,
+                    'user_role': transaction.id_user.role,
+                    'total_expense': 0
+                }
+
+            member_expenses[user_key]['total_expense'] += expense
+
+            expenses_list.append({
+                'transaction_id': transaction.transaction_id,
+                'transaction_date': transaction.transaction_date,
+                'expense': expense,
+                'description': transaction.description,
+                'category': transaction.category,
+                'transaction_type': transaction.transaction_type,
+                'user_name': f"{transaction.id_user.name} {transaction.id_user.surname}",
+                'user_role': transaction.id_user.role,
+            })
+
+        # Sortowanie po dacie (najnowsze na górze)
+        expenses_list.sort(key=lambda x: x['transaction_date'], reverse=True)
+
+        # Konwersja słownika na listę i sortowanie po wydatkach (malejąco)
+        family_expenses = list(member_expenses.values())
+        family_expenses.sort(key=lambda x: x['total_expense'], reverse=True)
+
+        categories = self.get_family_categories(family_members, request.user)
+        context = {
+            'transactions': expenses_list,
+            'total_expense': total_expense,
+            'family_expenses': family_expenses,  # Dodane wydatki per członek
+            'user_id': request.user.user_id,
+            'categories': categories,
+            'selected_category': '',
+            'is_family_view': True,
+            'family_members_count': len(family_members) + 1 if family_members else 1
+        }
+        return render(request, 'family_expenses.html', context)
+
+    def get_family_members(self, user):
+        """
+        Pobiera wszystkich członków rodziny dla danego użytkownika.
+        """
+        try:
+            if hasattr(user, 'family_id') and user.family_id:
+                from .models import User
+                family_members = User.objects.filter(
+                    family_id=user.family_id
+                ).exclude(user_id=user.user_id)
+                return family_members
+            return []
+        except Exception as e:
+            print(f"Błąd podczas pobierania członków rodziny: {e}")
+            return []
+
+    def get_family_categories(self, family_members, current_user):
+        """
+        Pobiera unikalne kategorie dla całej rodziny.
+        """
+        try:
+            if family_members:
+                all_users = [current_user] + list(family_members)
+                categories = DataTransaction.objects.filter(
+                    id_user__in=all_users,
+                    category__isnull=False
+                ).exclude(category='').values_list('category', flat=True).distinct().order_by('category')
+            else:
+                categories = DataTransaction.objects.filter(
+                    id_user=current_user,
+                    category__isnull=False
+                ).exclude(category='').values_list('category', flat=True).distinct().order_by('category')
+            return list(categories)
+        except Exception as e:
+            print(f"Błąd podczas pobierania kategorii rodzinnych: {e}")
+            return []
+
+
+@method_decorator(login_required, name='dispatch')
 class AllUserIncomesView(View):
     """
     This view is responsible for fetching all transactions related to incomes
@@ -204,6 +463,115 @@ class AllUserIncomesView(View):
         }
 
         return render(request, 'incomes.html', context)
+
+
+
+@method_decorator(login_required, name='dispatch')
+class AllFamilyIncomesView(View):
+    """
+    Provides functionality to retrieve, process, and render income transaction
+    data for all family members of the currently logged-in user. This includes
+    calculating the total income for the entire family, preparing a list
+    of individual transactions, and retrieving unique transaction categories.
+    It renders the data to the specified template for display.
+    """
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Pobierz wszystkich członków rodziny
+        family_members = self.get_family_members(request.user)
+        if not family_members:
+            # Jeśli użytkownik nie ma rodziny, wyświetl tylko jego przychody
+            transactions = DataTransaction.objects.filter(
+                id_user=request.user,
+                income__gt=0
+            )
+        else:
+            # Pobierz przychody dla wszystkich członków rodziny
+            transactions = DataTransaction.objects.filter(
+                id_user__in=[request.user] + list(family_members),
+                income__gt=0
+            )
+        # Przetwarzanie transakcji
+        incomes_list = []
+        total_income = 0
+        member_incomes = {}  # Słownik do przechowywania sum przychodów dla każdego członka
+        for transaction in transactions:
+            income = float(transaction.income) if transaction.income else 0
+            total_income += income
+            # Obliczanie przychodów per członek rodziny
+            user_key = transaction.id_user.user_id
+            user_name = f"{transaction.id_user.name} {transaction.id_user.surname}"
+            if user_key not in member_incomes:
+                member_incomes[user_key] = {
+                    'user_name': transaction.id_user.name,
+                    'user_surname': transaction.id_user.surname,
+                    'user_role': transaction.id_user.role,
+                    'total_income': 0
+                }
+            member_incomes[user_key]['total_income'] += income
+            incomes_list.append({
+                'transaction_id': transaction.transaction_id,
+                'transaction_date': transaction.transaction_date,
+                'income': income,
+                'description': transaction.description,
+                'category': transaction.category,
+                'transaction_type': transaction.transaction_type,
+                'user_name': f"{transaction.id_user.name} {transaction.id_user.surname}",
+                'user_role': transaction.id_user.role,
+            })
+        # Sortowanie po dacie (najnowsze na górze)
+        incomes_list.sort(key=lambda x: x['transaction_date'], reverse=True)
+        # Konwersja słownika na listę i sortowanie po przychodach (malejąco)
+        family_incomes = list(member_incomes.values())
+        family_incomes.sort(key=lambda x: x['total_income'], reverse=True)
+        categories = self.get_family_categories(family_members, request.user)
+        context = {
+            'transactions': incomes_list,
+            'total_income': total_income,
+            'family_incomes': family_incomes,  # Dodane przychody per członek
+            'user_id': request.user.user_id,
+            'categories': categories,
+            'selected_category': '',
+            'is_family_view': True,
+            'family_members_count': len(family_members) + 1 if family_members else 1
+        }
+        return render(request, 'family_incomes.html', context)
+    def get_family_members(self, user):
+        """
+        Pobiera wszystkich członków rodziny dla danego użytkownika.
+        """
+        try:
+            if hasattr(user, 'family_id') and user.family_id:
+                from .models import User
+                family_members = User.objects.filter(
+                    family_id=user.family_id
+                ).exclude(user_id=user.user_id)
+                return family_members
+            return []
+        except Exception as e:
+            print(f"Błąd podczas pobierania członków rodziny: {e}")
+            return []
+    def get_family_categories(self, family_members, current_user):
+        """
+        Pobiera unikalne kategorie dla całej rodziny.
+        """
+        try:
+            if family_members:
+                all_users = [current_user] + list(family_members)
+                categories = DataTransaction.objects.filter(
+                    id_user__in=all_users,
+                    category__isnull=False
+                ).exclude(category='').values_list('category', flat=True).distinct().order_by('category')
+            else:
+                categories = DataTransaction.objects.filter(
+                    id_user=current_user,
+                    category__isnull=False
+                ).exclude(category='').values_list('category', flat=True).distinct().order_by('category')
+            return list(categories)
+        except Exception as e:
+            print(f"Błąd podczas pobierania kategorii rodzinnych: {e}")
+            return []
 
 
 def get_unique_categories():

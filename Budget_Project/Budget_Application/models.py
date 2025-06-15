@@ -23,6 +23,103 @@ class DataTransaction(models.Model):
         db_table = 'DATA_TRANSACTION'
 
 
+class FamilyTransactionView(models.Model):
+    """
+    Model do wyświetlania transakcji dla całej rodziny zalogowanego użytkownika.
+    Obejmuje transakcje wszystkich członków rodziny wraz z informacjami o użytkowniku i jego roli.
+    """
+    transaction_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='family_transactions')
+    user_name = models.CharField(max_length=100)
+    user_surname = models.CharField(max_length=100)
+    user_role = models.CharField(max_length=10)
+    transaction_date = models.DateField()
+    income = models.FloatField(blank=True, null=True)
+    expense = models.FloatField(blank=True, null=True)
+    description = models.CharField(blank=True, null=True, max_length=255)
+    category = models.CharField(blank=True, null=True, max_length=255)
+    transaction_type = models.CharField(blank=True, null=True, max_length=255)
+    family_id = models.UUIDField()
+
+    class Meta:
+        managed = False  # Nie tworzymy fizycznej tabeli - to będzie widok lub query
+        db_table = 'family_transaction_view'
+
+    @classmethod
+    def get_family_transactions(cls, user):
+        """
+        Pobiera wszystkie transakcje dla rodziny zalogowanego użytkownika.
+
+        Args:
+            user: Zalogowany użytkownik
+
+        Returns:
+            QuerySet zawierający transakcje całej rodziny lub tylko użytkownika jeśli nie należy do rodziny
+        """
+        if user.family_id is None:
+            # Użytkownik nie należy do rodziny - zwracamy tylko jego transakcje
+            return DataTransaction.objects.filter(id_user=user).select_related('id_user')
+
+        # Użytkownik należy do rodziny - pobieramy transakcje wszystkich członków rodziny
+        family_members = User.objects.filter(family_id=user.family_id)
+
+        transactions = DataTransaction.objects.filter(
+            id_user__in=family_members
+        ).select_related('id_user').annotate(
+            user_name=models.F('id_user__name'),
+            user_surname=models.F('id_user__surname'),
+            user_role=models.F('id_user__role'),
+            family_id=models.F('id_user__family_id')
+        ).order_by('-transaction_date', 'id_user__name')
+
+        return transactions
+
+    @classmethod
+    def get_family_transactions_with_details(cls, user):
+        """
+        Pobiera szczegółowe informacje o transakcjach rodziny w formacie słownika.
+
+        Args:
+            user: Zalogowany użytkownik
+
+        Returns:
+            Lista słowników z pełnymi informacjami o transakcjach
+        """
+        if user.family_id is None:
+            # Użytkownik nie należy do rodziny
+            transactions = DataTransaction.objects.filter(
+                id_user=user
+            ).select_related('id_user')
+        else:
+            # Użytkownik należy do rodziny
+            family_members = User.objects.filter(family_id=user.family_id)
+            transactions = DataTransaction.objects.filter(
+                id_user__in=family_members
+            ).select_related('id_user')
+
+        result = []
+        for transaction in transactions:
+            result.append({
+                'transaction_id': transaction.transaction_id,
+                'user_id': transaction.id_user.user_id,
+                'user_name': transaction.id_user.name,
+                'user_surname': transaction.id_user.surname,
+                'user_role': transaction.id_user.role,
+                'transaction_date': transaction.transaction_date,
+                'income': transaction.income,
+                'expense': transaction.expense,
+                'description': transaction.description,
+                'category': transaction.category,
+                'transaction_type': transaction.transaction_type,
+                'family_id': transaction.id_user.family_id,
+                'is_current_user': transaction.id_user == user
+            })
+
+        return sorted(result, key=lambda x: (x['transaction_date'], x['user_name']), reverse=True)
+
+    def __str__(self):
+        return f"{self.user_name} {self.user_surname} - {self.transaction_date} - {self.category}"
+
 
 def generate_access_code(length=6):
     characters = string.ascii_uppercase + string.digits

@@ -1,0 +1,175 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Transakcje rodziny{% endblock %}
+
+{% block menu_family %}active{% endblock %}
+
+{% block header_title %}Wszystkie transakcje rodziny{% endblock %}
+
+{% block content %}
+    {% if transactions %}
+    <table id="transactionsTable" class="table table-hover">
+    <thead class="table-dark fw-bold">
+        <tr>
+            <th>
+                Data
+                <span class="ms-1 d-inline-block">
+                    <a href="?sort=date_asc" class="text-decoration-none text-secondary mx-1 {% if sort_order == 'date_asc' %}fw-bold text-dark{% endif %}">▲</a>
+                    <a href="?sort=date_desc" class="text-decoration-none text-secondary mx-1 {% if sort_order == 'date_desc' %}fw-bold text-dark{% endif %}">▼</a>
+                </span>
+            </th>
+            <th>Użytkownik</th>
+            <th>Kwota</th>
+            <th>Opis</th>
+            <th>Kategoria</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.transaction_date|date:"d.m.Y" }}</td>
+                <td>
+                    {% if transaction.user_full_name %}
+                        <span class="fw-bold">
+                            {{ transaction.user_full_name }}
+                        </span>
+                        {% if transaction.user_role%}
+                            {% if transaction.user_role == 'kid' %}
+                                <small class="text-muted d-block">dziecko</small>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">Nieznany użytkownik</span>
+                    {% endif %}
+                </td>
+                <td class="{% if transaction.income %}text-success{% else %}text-danger{% endif %}">
+                    {% if transaction.income %}
+                        {{ transaction.income|floatformat:2 }} zł
+                    {% elif transaction.expense %}
+                        - {{ transaction.expense|floatformat:2 }} zł
+                    {% endif %}
+                </td>
+                <td>{{ transaction.description|default:"-" }}</td>
+                <td>{{ transaction.category|default:"-" }}</td>
+            </tr>
+        {% endfor %}
+        <tr class="table-secondary fw-bold">
+            <td colspan="2">Suma całkowita:</td>
+            <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ total_balance|floatformat:2 }} zł
+            </td>
+            <td colspan="2"></td>
+        </tr>
+    </tbody>
+</table>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Podsumowanie rodziny</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="fw-bold mb-2">
+                            Przychody <span class="text-success">{{ total_income|floatformat:2 }} zł</span>
+                        </div>
+                        <div class="fw-bold">
+                            Wydatki <span class="text-danger">{{ total_expense|floatformat:2 }} zł</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Członkowie rodziny</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if family_members %}
+                            {% for member in family_members %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>
+                                        <strong>{{ member.name }} {{ member.surname }}</strong>
+                                        {% if member.role == 'adult' %}
+                                            <i class="bi bi-person-fill text-muted"></i>
+                                        {% elif member.role == 'kid' %}
+                                            <i class="bi bi-person-hearts text-muted"></i>
+                                        {% else %}
+                                            <small class="text-muted">({{ member.role|capfirst }})</small>
+                                        {% endif %}
+                                    </span>
+                                    {% if member.is_blocked %}
+                                        <span class="badge bg-danger">Zablokowany</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Aktywny</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted mb-0">Brak informacji o członkach rodziny</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtrowanie po kategorii -->
+        {% if categories %}
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filtruj po kategorii</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <a href="?" class="btn btn-outline-secondary btn-sm me-2 mb-2 {% if not selected_category %}active{% endif %}">
+                                Wszystkie
+                            </a>
+                            {% for category in categories %}
+                                <a href="?category={{ category }}" class="btn btn-outline-primary btn-sm me-2 mb-2 {% if selected_category == category %}active{% endif %}">
+                                    {{ category }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <div class="alert alert-info">
+            <h4 class="alert-heading">Brak transakcji</h4>
+            <p class="mb-0">Nie znaleziono żadnych transakcji dla rodziny.</p>
+        </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Funkcja do zachowania parametrów sortowania przy przechodzeniu między stronami
+            const currentUrl = new URL(window.location.href);
+            const sortLinks = document.querySelectorAll('.sort-icons a');
+
+            sortLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const sortParam = this.getAttribute('href').split('=')[1];
+                    currentUrl.searchParams.set('sort', sortParam);
+                    window.location.href = currentUrl.toString();
+                });
+            });
+
+            // Podświetlanie aktualnie zalogowanego użytkownika
+            const userRows = document.querySelectorAll('tbody tr');
+            userRows.forEach(row => {
+                const userCell = row.querySelector('td:nth-child(2)');
+                if (userCell && userCell.querySelector('.current-user-indicator')) {
+                    row.classList.add('table-warning');
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 {% load static %}
 <html lang="pl">
@@ -13,6 +14,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-switch .form-check-input {
+            width: 2.5em;
+            height: 1.25em;
+        }
+        .switch-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .switch-wrapper {
+            position: relative;
+        }
+    </style>
     {% block extra_styles %}{% endblock %}
 </head>
 <body>
@@ -69,7 +88,28 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 p-0">
                 <div class="bg-light p-4 shadow-sm">
-                    <h2 class="mb-0">{% block header_title %}Transakcje użytkownika{% endblock %}</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0">{% block header_title %}Transakcje użytkownika{% endblock %}</h2>
+
+                        <!-- Switch do przełączania widoku transakcji -->
+                        <div class="switch-container">
+                            <span class="switch-label text-muted">
+                                <i class="bi bi-person me-1"></i>Moje
+                            </span>
+                            <div class="switch-wrapper">
+                                <div class="form-check form-switch"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="Przełącz między widokiem twoich transakcji, a całej Twojej rodziny.">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="viewToggleSwitch"
+                                           onchange="toggleTransactionView()">
+                                </div>
+                            </div>
+                            <span class="switch-label text-muted">
+                                <i class="bi bi-people me-1"></i>Rodzina
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div class="container-fluid p-4">
                     {% block content %}{% endblock %}
@@ -106,6 +146,52 @@
             $('#calendar-to-icon').click(function() {
                 $('#date-to').datepicker('show');
             });
+
+            // Inicjalizacja tooltipów Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        });
+
+
+        // Funkcja do przełączania widoku transakcji
+        function toggleTransactionView() {
+            const toggle = document.getElementById('viewToggleSwitch');
+            const currentPath = window.location.pathname;
+            if (toggle.checked) {
+                // Przełącz na widok rodzinny
+                if (currentPath.includes('/expenses/')) {
+                    window.location.href = '/expenses/family/';
+                } else if (currentPath.includes('/incomes/')) {
+                    window.location.href = '/incomes/family/';
+                } else {
+                    window.location.href = '/transactions/family/';
+                }
+            } else {
+                // Przełącz na widok osobisty
+                if (currentPath.includes('/expenses/')) {
+                    window.location.href = '/expenses/';
+                } else if (currentPath.includes('/incomes/')) {
+                    window.location.href = '/incomes/';
+                } else {
+                    window.location.href = '/transactions/';
+                }
+            }
+        }
+
+        // Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('viewToggleSwitch');
+            const currentPath = window.location.pathname;
+            // Sprawdź czy jesteśmy na stronie rodzinnych transakcji, wydatków lub przychodów
+            if (currentPath.includes('/transactions/family/') ||
+                currentPath.includes('/expenses/family/') ||
+                currentPath.includes('/incomes/family/')) {
+                toggle.checked = true;
+            } else {
+                toggle.checked = false;
+            }
         });
     </script>
     {% block extra_scripts %}{% endblock %}
