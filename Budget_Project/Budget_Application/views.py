@@ -594,9 +594,16 @@ def filtered_transactions(request):
     selected_category = request.GET.get('category', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    transaction_type = request.GET.get('type', '')  # Dodane: obsługa parametru type
 
     # Podstawowe zapytanie dla aktualnie zalogowanego użytkownika
     query = Q(id_user=request.user)
+
+    # Dodanie filtra typu transakcji, jeśli został wybrany
+    if transaction_type == 'income':
+        query &= Q(income__isnull=False) & Q(income__gt=0)
+    elif transaction_type == 'expense':
+        query &= Q(expense__isnull=False) & Q(expense__gt=0)
 
     # Dodanie filtra kategorii, jeśli została wybrana
     if selected_category:
@@ -641,11 +648,6 @@ def filtered_transactions(request):
     total_expense = sum(float(t.expense or 0) for t in transactions)
     total_balance = total_income - total_expense
 
-    # Debug
-    #print(f"Query: {query}")
-    # print(f"Data od: {date_from}, Data do: {date_to}")
-    # print(f"Liczba znalezionych transakcji: {transactions.count()}")
-
     context = {
         'user': user,
         'user_id': user.user_id,
@@ -654,6 +656,7 @@ def filtered_transactions(request):
         'selected_category': selected_category,
         'date_from': date_from,
         'date_to': date_to,
+        'transaction_type': transaction_type,  # Dodane: przekazanie typu do szablonu
         'total_income': total_income,
         'total_expense': total_expense,
         'total_balance': total_balance,
@@ -666,7 +669,7 @@ def filtered_family_transactions(request):
     """Widok filtrujący transakcje rodziny po kategorii, datach i członkach rodziny"""
     from datetime import datetime
     from django.db.models import Q
-    import uuid  # Dodanie importu uuid
+    import uuid
 
     if not request.user.is_authenticated:
         return redirect('login')
@@ -682,6 +685,7 @@ def filtered_family_transactions(request):
     selected_user = request.GET.get('user', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
+    transaction_type = request.GET.get('type', '')  # Dodanie filtra typu transakcji
 
     # Używamy metody z modelu FamilyTransactionView
     base_transactions = FamilyTransactionView.get_family_transactions(user)
@@ -700,6 +704,12 @@ def filtered_family_transactions(request):
             filtered_transactions = filtered_transactions.filter(id_user__user_id=selected_user_uuid)
         except (ValueError, TypeError):
             pass
+
+    # Filtr typu transakcji (wydatki/przychody)
+    if transaction_type == 'expense':
+        filtered_transactions = filtered_transactions.filter(expense__isnull=False, expense__gt=0)
+    elif transaction_type == 'income':
+        filtered_transactions = filtered_transactions.filter(income__isnull=False, income__gt=0)
 
     # Filtr dat
     if date_from:
@@ -744,6 +754,10 @@ def filtered_family_transactions(request):
     total_expense = sum(float(t.expense or 0) for t in transactions)
     total_balance = total_income - total_expense
 
+    # Separacja wydatków i przychodów dla lepszej analizy
+    expenses_only = transactions.filter(expense__isnull=False, expense__gt=0)
+    incomes_only = transactions.filter(income__isnull=False, income__gt=0)
+
     # Podsumowanie według członków rodziny (tylko dla przefiltrowanych transakcji)
     family_summary = []
     for member in family_members_info:
@@ -764,11 +778,14 @@ def filtered_family_transactions(request):
     context = {
         'user': user,
         'transactions': transactions,
+        'expenses_only': expenses_only,
+        'incomes_only': incomes_only,
         'categories': categories,
         'family_members': family_members_info,
         'family_summary': family_summary,
         'selected_category': selected_category,
         'selected_user': selected_user,
+        'selected_type': transaction_type,
         'date_from': date_from,
         'date_to': date_to,
         'total_income': total_income,
