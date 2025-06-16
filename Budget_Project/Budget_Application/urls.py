@@ -25,7 +25,7 @@ urlpatterns = [
     path('incomes/', AllUserIncomesView.as_view(), name='all-user-incomes'),
     path('incomes/family/', AllFamilyIncomesView.as_view(), name='family-incomes'),
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
-
+    path('transactions/family/filter/', views.filtered_family_transactions, name='filtered-family-transactions'),
 
     # ==================== UŻYTKOWNICY ====================
     path('user/<str:login>/', views.user_detail_view, name='user_detail'),
