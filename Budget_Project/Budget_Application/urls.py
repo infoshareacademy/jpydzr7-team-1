@@ -2,14 +2,9 @@ from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
 from .views import (
-    AllUserTransactionsView,
     AllUserExpensesView,
-    AllUserIncomesView,
     MyPasswordResetView,
     filtered_transactions,
-    AllFamilyTransactionsView,
-    AllFamilyExpensesView,
-    AllFamilyIncomesView,
 )
 
 urlpatterns = [
@@ -18,11 +13,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
 
     # ==================== TRANSAKCJE ====================
-    path('transactions/family/', AllFamilyTransactionsView.as_view(), name='all-family-transactions'),
     path('expenses/', AllUserExpensesView.as_view(), name='expenses'),
-    path('expenses/family/', AllFamilyExpensesView.as_view(), name='family-expenses'),
-    path('incomes/', AllUserIncomesView.as_view(), name='all-user-incomes'),
-    path('incomes/family/', AllFamilyIncomesView.as_view(), name='family-incomes'),
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
     path('transactions/family/filter/', views.filtered_family_transactions, name='filtered-family-transactions'),
 
