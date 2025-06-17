@@ -15,6 +15,7 @@
     <!-- Custom CSS -->
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <style>
+        /* Component Styles */
         .switch-container {
             display: flex;
             align-items: center;
@@ -32,9 +33,8 @@
             position: relative;
         }
 
-        /* Mobile optimizations */
+        /* Mobile Layout Styles */
         @media (max-width: 767.98px) {
-            /* Mobile sidebar - hidden by default */
             .sidebar {
                 position: fixed;
                 top: 0;
@@ -45,12 +45,9 @@
                 transition: left 0.3s ease-in-out;
                 overflow-y: auto;
             }
-
             .sidebar.show {
                 left: 0;
             }
-
-            /* Overlay for mobile sidebar */
             .sidebar-overlay {
                 position: fixed;
                 top: 0;
@@ -61,39 +58,28 @@
                 z-index: 1040;
                 display: none;
             }
-
             .sidebar-overlay.show {
                 display: block;
             }
-
-            /* Main content adjustments for mobile */
             .main-content {
                 width: 100%;
                 margin-left: 0;
             }
-
-            /* Mobile header adjustments */
             .mobile-header {
                 padding: 0.75rem 1rem;
             }
-
             .mobile-header h2 {
                 font-size: 1.25rem;
                 margin-bottom: 0.5rem;
             }
-
-            /* Mobile switch container */
             .switch-container {
                 flex-direction: column;
                 gap: 8px;
                 align-items: center;
             }
-
             .switch-label {
                 font-size: 0.8rem;
             }
-
-            /* Mobile menu button */
             .mobile-menu-btn {
                 position: fixed;
                 top: 1rem;
@@ -109,27 +95,23 @@
                 justify-content: center;
                 box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             }
-
-            /* Mobile content padding */
             .mobile-content {
                 padding: 60px 1rem 1rem 1rem;
             }
+        }
 
-            /* Form adjustments for mobile */
+        /* Mobile Form Styles */
+        @media (max-width: 767.98px) {
             .sidebar form {
                 padding: 0 0.5rem;
             }
-
             .sidebar .form-select-sm,
             .sidebar .form-control-sm {
                 font-size: 0.875rem;
             }
-
-            /* Date picker adjustments */
             .date-input-group {
                 position: relative;
             }
-
             .calendar-icon {
                 position: absolute;
                 right: 10px;
@@ -140,27 +122,24 @@
             }
         }
 
-        /* Tablet adjustments */
+        /* Tablet Responsive Styles */
         @media (min-width: 768px) and (max-width: 991.98px) {
             .sidebar {
                 width: 240px;
             }
-
             .switch-container {
                 gap: 8px;
             }
-
             .switch-label {
                 font-size: 0.85rem;
             }
         }
 
-        /* Desktop - original layout */
+        /* Desktop Styles */
         @media (min-width: 992px) {
             .mobile-menu-btn {
                 display: none;
             }
-
             .sidebar {
                 position: sticky;
                 top: 0;
@@ -172,15 +151,12 @@
 </head>
 <body>
 {% include 'navbar.html' %}
-
 <!-- Mobile menu button -->
 <button class="mobile-menu-btn d-lg-none" type="button" onclick="toggleMobileSidebar()">
     <i class="bi bi-list text-white fs-5"></i>
 </button>
-
 <!-- Sidebar overlay for mobile -->
 <div class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
-
 <div class="container-fluid p-0">
     <div class="row g-0">
         <!-- Sidebar (boczne menu) -->
@@ -192,7 +168,6 @@
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-
             <h4 class="fw-bold pb-2 border-bottom border-secondary mb-3 d-none d-lg-block">Transakcje</h4>
             <ul class="nav flex-column mb-4">
                 <li class="nav-item">
@@ -249,13 +224,11 @@
                 <button class="btn btn-sm btn-primary w-100" type="submit" onclick="closeMobileSidebar()">Zastosuj filtry</button>
             </form>
         </div>
-
         <!-- Main Content -->
         <div class="col-lg-10 p-0 main-content">
             <div class="bg-light p-4 shadow-sm mobile-header">
                 <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
                     <h2 class="mb-0">{% block header_title %}Transakcje użytkownika{% endblock %}</h2>
-
                     <!-- Switch do przełączania widoku transakcji -->
                     <div class="switch-container mt-2 mt-md-0">
                         <span class="switch-label text-muted">
@@ -282,7 +255,6 @@
         </div>
     </div>
 </div>
-
 <!-- jQuery (wymagany przez Bootstrap Datepicker - kalendarz) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- Bootstrap JS Bundle z Popper -->
@@ -291,47 +263,61 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <!-- Bootstrap Datepicker PL Lokalizacja -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.pl.min.js"></script>
-
 <script>
+    // Configuration Constants
+    const SELECTORS = {
+        sidebar: '#sidebar',
+        sidebarOverlay: '.sidebar-overlay',
+        viewToggleSwitch: '#viewToggleSwitch',
+        allTransactionsLink: '#all-transactions-link',
+        dateFrom: '#date-from',
+        dateTo: '#date-to',
+        calendarFromIcon: '#calendar-from-icon',
+        calendarToIcon: '#calendar-to-icon'
+    };
+
+    const PATHS = {
+        personal: '/transactions/filter/',
+        family: '/transactions/family/filter/',
+        personalExpense: '/transactions/filter/?type=expense',
+        familyExpense: '/transactions/family/filter/?type=expense',
+        personalIncome: '/transactions/filter/?type=income',
+        familyIncome: '/transactions/family/filter/?type=income'
+    };
+
+    const MOBILE_BREAKPOINT = 992;
+
     // Mobile sidebar functions
     function toggleMobileSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-
+        const sidebar = document.querySelector(SELECTORS.sidebar);
+        const overlay = document.querySelector(SELECTORS.sidebarOverlay);
         sidebar.classList.toggle('show');
         overlay.classList.toggle('show');
 
-        // Prevent body scroll when sidebar is open
-        if (sidebar.classList.contains('show')) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
     }
 
     function closeMobileSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.querySelector('.sidebar-overlay');
-
+        const sidebar = document.querySelector(SELECTORS.sidebar);
+        const overlay = document.querySelector(SELECTORS.sidebarOverlay);
         sidebar.classList.remove('show');
         overlay.classList.remove('show');
         document.body.style.overflow = '';
     }
 
-    // Close sidebar when clicking on navigation links on mobile
-    document.addEventListener('DOMContentLoaded', function() {
+    function setupMobileNavigation() {
         const navLinks = document.querySelectorAll('.sidebar .nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', function() {
-                if (window.innerWidth < 992) {
+                if (window.innerWidth < MOBILE_BREAKPOINT) {
                     setTimeout(closeMobileSidebar, 100);
                 }
             });
         });
-    });
+    }
 
-    $(document).ready(function () {
-        var datepickerOptions = {
+    function initializeDatepickers() {
+        const datepickerConfig = {
             format: 'yyyy-mm-dd',
             todayBtn: 'linked',
             clearBtn: false,
@@ -341,103 +327,88 @@
             zIndexOffset: 1000
         };
 
-        // Inicjalizacja datepickerów
-        $('#date-from, #date-to').datepicker(datepickerOptions);
+        $(SELECTORS.dateFrom + ', ' + SELECTORS.dateTo).datepicker(datepickerConfig);
 
-        // Obsługa kliknięcia ikon kalendarza
-        $('#calendar-from-icon').click(function () {
-            $('#date-from').datepicker('show');
-        });
-        $('#calendar-to-icon').click(function () {
-            $('#date-to').datepicker('show');
+        $(SELECTORS.calendarFromIcon).click(function () {
+            $(SELECTORS.dateFrom).datepicker('show');
         });
 
-        // Inicjalizacja tooltipów Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
+        $(SELECTORS.calendarToIcon).click(function () {
+            $(SELECTORS.dateTo).datepicker('show');
         });
-    });
+    }
 
-    // Funkcja do nawigacji do strony "Wydatki"
+    function initializeTooltips() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
+    // Navigation functions
     function navigateToExpenses() {
-        const toggle = document.getElementById('viewToggleSwitch');
-        if (toggle.checked) {
-            window.location.href = '/transactions/family/filter/?type=expense';
-        } else {
-            window.location.href = '/transactions/filter/?type=expense';
-        }
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+        const targetPath = toggle.checked ? PATHS.familyExpense : PATHS.personalExpense;
+        window.location.href = targetPath;
     }
 
-    // Funkcja do nawigacji do strony "Przychody"
     function navigateToIncomes() {
-        const toggle = document.getElementById('viewToggleSwitch');
-        if (toggle.checked) {
-            window.location.href = '/transactions/family/filter/?type=income';
-        } else {
-            window.location.href = '/transactions/filter/?type=income';
-        }
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+        const targetPath = toggle.checked ? PATHS.familyIncome : PATHS.personalIncome;
+        window.location.href = targetPath;
     }
 
-    // Funkcja do przełączania widoku transakcji
+    function navigateToAllTransactions() {
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+        const targetPath = toggle.checked ? PATHS.family : PATHS.personal;
+        window.location.href = targetPath;
+    }
+
     function toggleTransactionView() {
-        const toggle = document.getElementById('viewToggleSwitch');
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
         const currentPath = window.location.pathname;
         const currentSearch = window.location.search;
 
+        let targetPath;
         if (toggle.checked) {
-            // Przełącz na widok rodzinny
-            if (currentPath === '/transactions/filter/') {
-                window.location.href = '/transactions/family/filter/' + currentSearch;
-            } else {
-                window.location.href = '/transactions/family/filter/';
-            }
+            targetPath = currentPath === PATHS.personal ?
+                PATHS.family + currentSearch : PATHS.family;
         } else {
-            // Przełącz na widok osobisty
-            if (currentPath === '/transactions/family/filter/') {
-                window.location.href = '/transactions/filter/' + currentSearch;
-            } else {
-                window.location.href = '/transactions/filter/';
-            }
+            targetPath = currentPath === PATHS.family ?
+                PATHS.personal + currentSearch : PATHS.personal;
         }
 
+        window.location.href = targetPath;
         updateAllTransactionsLink();
     }
 
-    // Funkcja do nawigacji do strony "Wszystkie transakcje"
-    function navigateToAllTransactions() {
-        const toggle = document.getElementById('viewToggleSwitch');
-        if (toggle.checked) {
-            window.location.href = '/transactions/family/filter/';
-        } else {
-            window.location.href = '/transactions/filter/';
-        }
-    }
-
-    // Funkcja do aktualizacji linku "Wszystkie"
     function updateAllTransactionsLink() {
-        const toggle = document.getElementById('viewToggleSwitch');
-        const allTransactionsLink = document.getElementById('all-transactions-link');
-
-        if (toggle.checked) {
-            allTransactionsLink.setAttribute('data-target', '/transactions/family/filter/');
-        } else {
-            allTransactionsLink.setAttribute('data-target', '/transactions/filter/');
-        }
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+        const allTransactionsLink = document.querySelector(SELECTORS.allTransactionsLink);
+        const targetPath = toggle.checked ? PATHS.family : PATHS.personal;
+        allTransactionsLink.setAttribute('data-target', targetPath);
     }
 
-    // Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
-    document.addEventListener('DOMContentLoaded', function () {
-        const toggle = document.getElementById('viewToggleSwitch');
+    function setInitialToggleState() {
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
         const currentPath = window.location.pathname;
-        if (currentPath.includes('/transactions/family/') ||
-            currentPath.includes('/expenses/family/') ||
-            currentPath.includes('/incomes/family/')) {
-            toggle.checked = true;
-        } else {
-            toggle.checked = false;
-        }
+        const isFamilyView = currentPath.includes('/transactions/family/') ||
+                           currentPath.includes('/expenses/family/') ||
+                           currentPath.includes('/incomes/family/');
+
+        toggle.checked = isFamilyView;
         updateAllTransactionsLink();
+    }
+
+    // Initialize everything when DOM is ready
+    $(document).ready(function () {
+        initializeDatepickers();
+        initializeTooltips();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setupMobileNavigation();
+        setInitialToggleState();
     });
 </script>
 {% block extra_scripts %}{% endblock %}
