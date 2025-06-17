@@ -3,30 +3,34 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{% block title %}Budżet - historia transakcji {% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Bootstrap Datepicker CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css"
+          rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
     <style>
         .switch-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .form-switch .form-check-input {
             width: 2.5em;
             height: 1.25em;
         }
+
         .switch-label {
             font-size: 0.9rem;
             font-weight: 500;
         }
+
         .switch-wrapper {
             position: relative;
         }
@@ -35,229 +39,231 @@
 </head>
 <body>
 {% include 'navbar.html' %}
-    <div class="container-fluid p-0">
-        <div class="row g-0">
-            <!-- Sidebar (boczne menu) -->
-            <div class="col-md-3 col-lg-2 sidebar sticky-sidebar text-white p-3">
-                <h4 class="fw-bold pb-2 border-bottom border-secondary mb-3">Transakcje</h4>
-                <ul class="nav flex-column mb-4">
-                    <li class="nav-item">
-                        <a href="#" id="all-transactions-link" class="nav-link text-white py-2 rounded {% block menu_all %}{% endblock %}" onclick="navigateToAllTransactions()">
-                            <i class="bi bi-arrow-left-right me-2"></i>Wszystkie
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" id="expenses-link" class="nav-link text-white py-2 rounded {% block menu_expenses %}{% endblock %}" onclick="navigateToExpenses()">
-                            <i class="bi bi-arrow-left-square me-2"></i>Wydatki
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="#" id="incomes-link" class="nav-link text-white py-2 rounded {% block menu_incomes %}{% endblock %}" onclick="navigateToIncomes()">
-                            <i class="bi bi-arrow-right-square me-2"></i>Przychody
-                        </a>
-                    </li>
-                </ul>
-                <hr class="border-secondary">
-                <h4 class="fw-bold pb-2 mb-3">Filtry</h4>
-                <form method="GET" action="{% url 'filtered-transactions' %}">
-                    <div class="mb-2 text-light-emphasis small">Kategoria</div>
-                    <select id="category-filter" name="category" class="form-select form-select-sm bg-secondary-subtle text-dark border-secondary-subtle mb-3">
-                        <option value="">Wszystkie kategorie</option>
-                        {% for category in categories %}
-                            <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="mb-2">
-                        <label for="date-from" class="form-label text-light-emphasis small mb-1">Transakcje od</label>
-                        <div class="date-input-group">
-                            <input type="text" id="date-from" name="date_from" class="form-control form-control-sm bg-secondary-subtle text-dark border-secondary-subtle" placeholder="RRRR-MM-DD" value="{{ date_from }}" autocomplete="off">
-                            <i class="bi bi-calendar3 calendar-icon" id="calendar-from-icon"></i>
-                        </div>
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar (boczne menu) -->
+        <div class="col-md-3 col-lg-2 sidebar sticky-sidebar text-white p-3">
+            <h4 class="fw-bold pb-2 border-bottom border-secondary mb-3">Transakcje</h4>
+            <ul class="nav flex-column mb-4">
+                <li class="nav-item">
+                    <a class="nav-link text-white py-2 rounded {% block menu_all %}{% endblock %}" href="#"
+                       id="all-transactions-link"
+                       onclick="navigateToAllTransactions()">
+                        <i class="bi bi-arrow-left-right me-2"></i>Wszystkie
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white py-2 rounded {% block menu_expenses %}{% endblock %}" href="#"
+                       id="expenses-link"
+                       onclick="navigateToExpenses()">
+                        <i class="bi bi-arrow-left-square me-2"></i>Wydatki
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white py-2 rounded {% block menu_incomes %}{% endblock %}" href="#"
+                       id="incomes-link"
+                       onclick="navigateToIncomes()">
+                        <i class="bi bi-arrow-right-square me-2"></i>Przychody
+                    </a>
+                </li>
+            </ul>
+            <hr class="border-secondary">
+            <h4 class="fw-bold pb-2 mb-3">Filtry</h4>
+            <form action="{% url 'filtered-transactions' %}" method="GET">
+                <div class="mb-2 text-light-emphasis small">Kategoria</div>
+                <select class="form-select form-select-sm bg-secondary-subtle text-dark border-secondary-subtle mb-3" id="category-filter"
+                        name="category">
+                    <option value="">Wszystkie kategorie</option>
+                    {% for category in categories %}
+                    <option %} %}selected{% category endif if selected_category== value="{{ category }}" {%>{{ category
+                        }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="mb-2">
+                    <label class="form-label text-light-emphasis small mb-1" for="date-from">Transakcje od</label>
+                    <div class="date-input-group">
+                        <input autocomplete="off" class="form-control form-control-sm bg-secondary-subtle text-dark border-secondary-subtle" id="date-from"
+                               name="date_from"
+                               placeholder="RRRR-MM-DD" type="text" value="{{ date_from }}">
+                        <i class="bi bi-calendar3 calendar-icon" id="calendar-from-icon"></i>
                     </div>
-                    <div class="mb-3">
-                        <label for="date-to" class="form-label text-light-emphasis small mb-1">Transakcje do</label>
-                        <div class="date-input-group">
-                            <input type="text" id="date-to" name="date_to" class="form-control form-control-sm bg-secondary-subtle text-dark border-secondary-subtle" placeholder="RRRR-MM-DD" value="{{ date_to }}" autocomplete="off">
-                            <i class="bi bi-calendar3 calendar-icon" id="calendar-to-icon"></i>
-                        </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-light-emphasis small mb-1" for="date-to">Transakcje do</label>
+                    <div class="date-input-group">
+                        <input autocomplete="off" class="form-control form-control-sm bg-secondary-subtle text-dark border-secondary-subtle" id="date-to"
+                               name="date_to"
+                               placeholder="RRRR-MM-DD" type="text" value="{{ date_to }}">
+                        <i class="bi bi-calendar3 calendar-icon" id="calendar-to-icon"></i>
                     </div>
-                    <button type="submit" class="btn btn-sm btn-primary w-100">Zastosuj filtry</button>
-                </form>
-            </div>
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 p-0">
-                <div class="bg-light p-4 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h2 class="mb-0">{% block header_title %}Transakcje użytkownika{% endblock %}</h2>
+                </div>
+                <button class="btn btn-sm btn-primary w-100" type="submit">Zastosuj filtry</button>
+            </form>
+        </div>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 p-0">
+            <div class="bg-light p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">{% block header_title %}Transakcje użytkownika{% endblock %}</h2>
 
-                        <!-- Switch do przełączania widoku transakcji -->
-                        <div class="switch-container">
+                    <!-- Switch do przełączania widoku transakcji -->
+                    <div class="switch-container">
                             <span class="switch-label text-muted">
                                 <i class="bi bi-person me-1"></i>Moje
                             </span>
-                            <div class="switch-wrapper">
-                                <div class="form-check form-switch"
-                                     data-bs-toggle="tooltip"
-                                     data-bs-placement="top"
-                                     title="Przełącz między widokiem twoich transakcji, a całej Twojej rodziny.">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="viewToggleSwitch"
-                                           onchange="toggleTransactionView()">
-                                </div>
+                        <div class="switch-wrapper">
+                            <div class="form-check form-switch"
+                                 data-bs-placement="top"
+                                 data-bs-toggle="tooltip"
+                                 title="Przełącz między widokiem twoich transakcji, a całej Twojej rodziny.">
+                                <input class="form-check-input" id="viewToggleSwitch" onchange="toggleTransactionView()" role="switch"
+                                       type="checkbox">
                             </div>
-                            <span class="switch-label text-muted">
+                        </div>
+                        <span class="switch-label text-muted">
                                 <i class="bi bi-people me-1"></i>Rodzina
                             </span>
-                        </div>
                     </div>
                 </div>
-                <div class="container-fluid p-4">
-                    {% block content %}{% endblock %}
-                </div>
+            </div>
+            <div class="container-fluid p-4">
+                {% block content %}{% endblock %}
             </div>
         </div>
     </div>
-    <!-- jQuery (wymagany przez Bootstrap Datepicker - kalendarz) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS Bundle z Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Bootstrap Datepicker JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-    <!-- Bootstrap Datepicker PL Lokalizacja -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.pl.min.js"></script>
-    <!-- Skrypt do obsługi kalendarza -->
-    <script>
-        $(document).ready(function() {
-            var datepickerOptions = {
-                format: 'yyyy-mm-dd',
-                todayBtn: 'linked',
-                clearBtn: false,
-                language: 'pl',
-                autoclose: true,
-                todayHighlight: true,
-                zIndexOffset: 1000
-            };
-            // Inicjalizacja datepickerów
-            $('#date-from, #date-to').datepicker(datepickerOptions);
-            // Obsługa kliknięcia ikon kalendarza
-            $('#calendar-from-icon').click(function() {
-                $('#date-from').datepicker('show');
-            });
-            $('#calendar-to-icon').click(function() {
-                $('#date-to').datepicker('show');
-            });
-
-            // Inicjalizacja tooltipów Bootstrap
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            });
+</div>
+<!-- jQuery (wymagany przez Bootstrap Datepicker - kalendarz) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap JS Bundle z Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Datepicker JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<!-- Bootstrap Datepicker PL Lokalizacja -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.pl.min.js"></script>
+<!-- Skrypt do obsługi kalendarza -->
+<script>
+    $(document).ready(function () {
+        var datepickerOptions = {
+            format: 'yyyy-mm-dd',
+            todayBtn: 'linked',
+            clearBtn: false,
+            language: 'pl',
+            autoclose: true,
+            todayHighlight: true,
+            zIndexOffset: 1000
+        };
+        // Inicjalizacja datepickerów
+        $('#date-from, #date-to').datepicker(datepickerOptions);
+        // Obsługa kliknięcia ikon kalendarza
+        $('#calendar-from-icon').click(function () {
+            $('#date-from').datepicker('show');
+        });
+        $('#calendar-to-icon').click(function () {
+            $('#date-to').datepicker('show');
         });
 
-// Funkcja do nawigacji do strony "Wydatki"
-function navigateToExpenses() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    if (toggle.checked) {
-        // Jeśli switch jest zaznaczony dla rodziny - przekieruj na szablon filtered_family_transactions.html z filtrem wydatków
-        window.location.href = '/transactions/family/filter/?type=expense';
-    } else {
-        // Jeśli switch jest dla użytkownika - przekieruj na szablon filtered_transactions.html z filtrem wydatków
-        window.location.href = '/transactions/filter/?type=expense';
-    }
-}
+        // Inicjalizacja tooltipów Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
 
-// Funkcja do nawigacji do strony "Przychody"
-function navigateToIncomes() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    if (toggle.checked) {
-        // Jeśli switch jest zaznaczony dla rodziny - przekieruj na szablon filtered_family_transactions.html z filtrem przychodów
-        window.location.href = '/transactions/family/filter/?type=income';
-    } else {
-        // Jeśli switch jest dla użytkownika - przekieruj na szablon filtered_transactions.html z filtrem przychodów
-        window.location.href = '/transactions/filter/?type=income';
-    }
-}
-
-// Funkcja do przełączania widoku transakcji
-function toggleTransactionView() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    const currentPath = window.location.pathname;
-    const currentSearch = window.location.search;
-
-    if (toggle.checked) {
-        // Przełącz na widok rodzinny
-        if (currentPath === '/transactions/filter/') {
-            window.location.href = '/transactions/family/filter/' + currentSearch;
+    // Funkcja do nawigacji do strony "Wydatki"
+    function navigateToExpenses() {
+        const toggle = document.getElementById('viewToggleSwitch');
+        if (toggle.checked) {
+            window.location.href = '/transactions/family/filter/?type=expense';
         } else {
-            window.location.href = '/transactions/family/filter/';
+            window.location.href = '/transactions/filter/?type=expense';
         }
-    } else {
-        // Przełącz na widok osobisty
-        if (currentPath === '/transactions/family/filter/') {
-            window.location.href = '/transactions/filter/' + currentSearch;
+    }
+
+    // Funkcja do nawigacji do strony "Przychody"
+    function navigateToIncomes() {
+        const toggle = document.getElementById('viewToggleSwitch');
+        if (toggle.checked) {
+            window.location.href = '/transactions/family/filter/?type=income';
+        } else {
+            window.location.href = '/transactions/filter/?type=income';
+        }
+    }
+
+    // Funkcja do przełączania widoku transakcji
+    function toggleTransactionView() {
+        const toggle = document.getElementById('viewToggleSwitch');
+        const currentPath = window.location.pathname;
+        const currentSearch = window.location.search;
+
+        if (toggle.checked) {
+            // Przełącz na widok rodzinny
+            if (currentPath === '/transactions/filter/') {
+                window.location.href = '/transactions/family/filter/' + currentSearch;
+            } else {
+                window.location.href = '/transactions/family/filter/';
+            }
+        } else {
+            // Przełącz na widok osobisty
+            if (currentPath === '/transactions/family/filter/') {
+                window.location.href = '/transactions/filter/' + currentSearch;
+            } else {
+                window.location.href = '/transactions/filter/';
+            }
+        }
+
+        updateAllTransactionsLink();
+    }
+
+    // Funkcja do nawigacji do strony "Wszystkie transakcje"
+    function navigateToAllTransactions() {
+        const toggle = document.getElementById('viewToggleSwitch');
+        if (toggle.checked) {
+            window.location.href = '/transactions/family/filter/';
         } else {
             window.location.href = '/transactions/filter/';
         }
     }
 
-    // Zaktualizuj link "Wszystkie"
-    updateAllTransactionsLink();
-}
+    // Funkcja do aktualizacji linku "Wszystkie"
+    function updateAllTransactionsLink() {
+        const toggle = document.getElementById('viewToggleSwitch');
+        const allTransactionsLink = document.getElementById('all-transactions-link');
 
-// Funkcja do nawigacji do strony "Wszystkie transakcje"
-function navigateToAllTransactions() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    if (toggle.checked) {
-        // Jeśli switch jest zaznaczony dla rodziny
-        window.location.href = '/transactions/family/filter/';
-    } else {
-        // Jeśli switch jest dla użytkownika
-        window.location.href = '/transactions/filter/';
-    }
-}
-
-// Funkcja do aktualizacji linku "Wszystkie"
-function updateAllTransactionsLink() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    const allTransactionsLink = document.getElementById('all-transactions-link');
-
-    if (toggle.checked) {
-        allTransactionsLink.setAttribute('data-target', '/transactions/family/filter/');
-    } else {
-        allTransactionsLink.setAttribute('data-target', '/transactions/filter/');
-    }
-}
-
-// Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
-document.addEventListener('DOMContentLoaded', function() {
-    const toggle = document.getElementById('viewToggleSwitch');
-    const currentPath = window.location.pathname;
-    // Sprawdź czy jesteśmy na stronie rodzinnych transakcji, wydatków lub przychodów
-    if (currentPath.includes('/transactions/family/') ||
-        currentPath.includes('/expenses/family/') ||
-        currentPath.includes('/incomes/family/')) {
-        toggle.checked = true;
-    } else {
-        toggle.checked = false;
+        if (toggle.checked) {
+            allTransactionsLink.setAttribute('data-target', '/transactions/family/filter/');
+        } else {
+            allTransactionsLink.setAttribute('data-target', '/transactions/filter/');
+        }
     }
 
-    // Zaktualizuj link "Wszystkie" po załadowaniu strony
-    updateAllTransactionsLink();
-});
+    // Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('viewToggleSwitch');
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/transactions/family/') ||
+            currentPath.includes('/expenses/family/') ||
+            currentPath.includes('/incomes/family/')) {
+            toggle.checked = true;
+        } else {
+            toggle.checked = false;
+        }
+        updateAllTransactionsLink();
+    });
 
-        // Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggle = document.getElementById('viewToggleSwitch');
-            const currentPath = window.location.pathname;
-            // Sprawdź czy jesteśmy na stronie rodzinnych transakcji, wydatków lub przychodów
-            if (currentPath.includes('/transactions/family/') ||
-                currentPath.includes('/expenses/family/') ||
-                currentPath.includes('/incomes/family/')) {
-                toggle.checked = true;
-            } else {
-                toggle.checked = false;
-            }
-        });
-    </script>
-    {% block extra_scripts %}{% endblock %}
+    // Ustawienie stanu switch'a na podstawie aktualnej ścieżki URL
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('viewToggleSwitch');
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/transactions/family/') ||
+            currentPath.includes('/expenses/family/') ||
+            currentPath.includes('/incomes/family/')) {
+            toggle.checked = true;
+        } else {
+            toggle.checked = false;
+        }
+    });
+</script>
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>
