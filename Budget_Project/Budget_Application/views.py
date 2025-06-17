@@ -31,15 +31,69 @@ from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest
     FamilyTransactionView
 from .services import UserService
 
+from datetime import datetime
+from django.db.models import Q
+import uuid
+
+
+class TransactionFilterService:
+    """Serwis odpowiedzialny za filtrowanie transakcji"""
+
+    @staticmethod
+    def parse_date(date_string):
+        """Parsuje datę z różnych formatów"""
+        if not date_string:
+            return None
+
+        date_formats = ['%Y-%m-%d', '%m/%d/%Y']
+        for date_format in date_formats:
+            try:
+                return datetime.strptime(date_string, date_format).date()
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def build_transaction_query(user, transaction_type=None, category=None, date_from=None, date_to=None):
+        """Buduje zapytanie dla filtrowania transakcji użytkownika"""
+        query = Q(id_user=user)
+
+        if transaction_type == 'income':
+            query &= Q(income__isnull=False) & Q(income__gt=0)
+        elif transaction_type == 'expense':
+            query &= Q(expense__isnull=False) & Q(expense__gt=0)
+
+        if category:
+            query &= Q(category=category)
+
+        date_from_obj = TransactionFilterService.parse_date(date_from)
+        if date_from_obj:
+            query &= Q(transaction_date__gte=date_from_obj)
+
+        date_to_obj = TransactionFilterService.parse_date(date_to)
+        if date_to_obj:
+            query &= Q(transaction_date__lte=date_to_obj)
+
+        return query
+
+    @staticmethod
+    def calculate_totals(transactions):
+        """Oblicza sumy przychodów, wydatków i bilans"""
+        total_income = sum(float(t.income or 0) for t in transactions)
+        total_expense = sum(float(t.expense or 0) for t in transactions)
+        return {
+            'total_income': total_income,
+            'total_expense': total_expense,
+            'total_balance': total_income - total_expense
+        }
+
+
 # === SECTION: USER & FAMILY TRANSACTION VIEWS ===
 @method_decorator(login_required, name='dispatch')
 class AllUserExpensesView(View):
     """
     Provides functionality to retrieve, process, and render expense transaction
-    data for the currently logged-in user. This includes calculating the total expenditures,
-    preparing a list of individual transactions, and retrieving unique
-    transaction categories. It renders the data to the specified template
-    for display.
+    data for the currently logged-in user.
     """
 
     def get(self, request):
@@ -51,16 +105,12 @@ class AllUserExpensesView(View):
             expense__gt=0
         )
 
-        # Debagowanie
-        # print(f"Znaleziono {transactions.count()} wydatków dla użytkownika {request.user.user_id}")
-
         expenses_list = []
         total_expense = 0
 
         for transaction in transactions:
             expense = float(transaction.expense) if transaction.expense else 0
             total_expense += expense
-
             expenses_list.append({
                 'transaction_id': transaction.transaction_id,
                 'transaction_date': transaction.transaction_date,
@@ -70,13 +120,11 @@ class AllUserExpensesView(View):
                 'transaction_type': transaction.transaction_type
             })
 
-        categories = get_unique_categories()
-
         context = {
             'transactions': expenses_list,
             'total_expense': total_expense,
             'user_id': request.user.user_id,
-            'categories': categories,
+            'categories': get_unique_categories(),
             'selected_category': ''
         }
 
@@ -84,112 +132,52 @@ class AllUserExpensesView(View):
 
 
 def get_unique_categories():
-    """
-    This function queries the `DataTransaction` model to extract and
-    return a list of all unique categories, ordered in ascending order.
-    The result is constructed as a flat list for ease of use.
-
-    :return: List of unique, distinct category names in ascending order
-    """
+    """Zwraca listę unikalnych kategorii transakcji"""
     return DataTransaction.objects.values_list('category', flat=True).distinct().order_by('category')
 
 
 @login_required
 def filtered_transactions(request):
     """Widok filtrujący transakcje po kategorii i datach dla aktualnie zalogowanego użytkownika"""
-    from datetime import datetime
-    from django.db.models import Q
-
     if not request.user.is_authenticated:
         return redirect('login')
 
-    user = request.user
+    # Pobieranie parametrów filtrowania
     selected_category = request.GET.get('category', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    transaction_type = request.GET.get('type', '')  # Dodane: obsługa parametru type
+    transaction_type = request.GET.get('type', '')
 
-    # Podstawowe zapytanie dla aktualnie zalogowanego użytkownika
-    query = Q(id_user=request.user)
-
-    # Dodanie filtra typu transakcji, jeśli został wybrany
-    if transaction_type == 'income':
-        query &= Q(income__isnull=False) & Q(income__gt=0)
-    elif transaction_type == 'expense':
-        query &= Q(expense__isnull=False) & Q(expense__gt=0)
-
-    # Dodanie filtra kategorii, jeśli została wybrana
-    if selected_category:
-        query &= Q(category=selected_category)
-
-    # Dodanie filtra dat, jeśli zostały wybrane
-    if date_from:
-        try:
-            # Obsługa formatu YYYY-MM-DD (z kalendarza Bootstrap)
-            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
-        except ValueError:
-            try:
-                # Fallback dla starszego formatu MM/DD/YYYY
-                date_from_obj = datetime.strptime(date_from, '%m/%d/%Y').date()
-            except ValueError:
-                # Jeśli żaden format nie pasuje, ignoruj filtr daty
-                date_from_obj = None
-
-        if date_from_obj:
-            query &= Q(transaction_date__gte=date_from_obj)
-
-    if date_to:
-        try:
-            # Obsługa formatu YYYY-MM-DD (z kalendarza Bootstrap)
-            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
-        except ValueError:
-            try:
-                # Fallback dla starszego formatu MM/DD/YYYY
-                date_to_obj = datetime.strptime(date_to, '%m/%d/%Y').date()
-            except ValueError:
-                # Jeśli żaden format nie pasuje, ignoruj filtr daty
-                date_to_obj = None
-
-        if date_to_obj:
-            query &= Q(transaction_date__lte=date_to_obj)
+    # Budowanie zapytania przy użyciu serwisu
+    query = TransactionFilterService.build_transaction_query(
+        request.user, transaction_type, selected_category, date_from, date_to
+    )
 
     transactions = DataTransaction.objects.filter(query).order_by('-transaction_date')
-    categories = get_unique_categories()
-
-    # Obliczanie sum i bilansu
-    total_income = sum(float(t.income or 0) for t in transactions)
-    total_expense = sum(float(t.expense or 0) for t in transactions)
-    total_balance = total_income - total_expense
+    totals = TransactionFilterService.calculate_totals(transactions)
 
     context = {
-        'user': user,
-        'user_id': user.user_id,
+        'user': request.user,
+        'user_id': request.user.user_id,
         'transactions': transactions,
-        'categories': categories,
+        'categories': get_unique_categories(),
         'selected_category': selected_category,
         'date_from': date_from,
         'date_to': date_to,
-        'transaction_type': transaction_type,  # Dodane: przekazanie typu do szablonu
-        'total_income': total_income,
-        'total_expense': total_expense,
-        'total_balance': total_balance,
+        'transaction_type': transaction_type,
+        **totals
     }
+
     return render(request, 'filtered_transactions.html', context)
 
 
 @login_required
 def filtered_family_transactions(request):
     """Widok filtrujący transakcje rodziny po kategorii, datach i członkach rodziny"""
-    from datetime import datetime
-    from django.db.models import Q
-    import uuid
-
     if not request.user.is_authenticated:
         return redirect('login')
 
     user = request.user
-
-    # Sprawdzenie czy użytkownik należy do rodziny
     if not user.family_id:
         return redirect('dashboard')
 
@@ -198,19 +186,16 @@ def filtered_family_transactions(request):
     selected_user = request.GET.get('user', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    transaction_type = request.GET.get('type', '')  # Dodanie filtra typu transakcji
+    transaction_type = request.GET.get('type', '')
 
-    # Używamy metody z modelu FamilyTransactionView
+    # Pobieranie bazowych transakcji rodziny
     base_transactions = FamilyTransactionView.get_family_transactions(user)
-
-    # Aplikowanie filtrów
     filtered_transactions = base_transactions
 
-    # Filtr kategorii
+    # Aplikowanie filtrów
     if selected_category:
         filtered_transactions = filtered_transactions.filter(category=selected_category)
 
-    # Filtr użytkownika (członka rodziny)
     if selected_user:
         try:
             selected_user_uuid = uuid.UUID(selected_user)
@@ -218,81 +203,54 @@ def filtered_family_transactions(request):
         except (ValueError, TypeError):
             pass
 
-    # Filtr typu transakcji (wydatki/przychody)
     if transaction_type == 'expense':
         filtered_transactions = filtered_transactions.filter(expense__isnull=False, expense__gt=0)
     elif transaction_type == 'income':
         filtered_transactions = filtered_transactions.filter(income__isnull=False, income__gt=0)
 
-    # Filtr dat
-    if date_from:
-        try:
-            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
-            filtered_transactions = filtered_transactions.filter(transaction_date__gte=date_from_obj)
-        except ValueError:
-            try:
-                date_from_obj = datetime.strptime(date_from, '%m/%d/%Y').date()
-                filtered_transactions = filtered_transactions.filter(transaction_date__gte=date_from_obj)
-            except ValueError:
-                pass
+    # Filtrowanie dat
+    date_from_obj = TransactionFilterService.parse_date(date_from)
+    if date_from_obj:
+        filtered_transactions = filtered_transactions.filter(transaction_date__gte=date_from_obj)
 
-    if date_to:
-        try:
-            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
-            filtered_transactions = filtered_transactions.filter(transaction_date__lte=date_to_obj)
-        except ValueError:
-            try:
-                date_to_obj = datetime.strptime(date_to, '%m/%d/%Y').date()
-                filtered_transactions = filtered_transactions.filter(transaction_date__lte=date_to_obj)
-            except ValueError:
-                pass
+    date_to_obj = TransactionFilterService.parse_date(date_to)
+    if date_to_obj:
+        filtered_transactions = filtered_transactions.filter(transaction_date__lte=date_to_obj)
 
-    # Sortowanie wyników
     transactions = filtered_transactions.order_by('-transaction_date')
 
-    # Pobieranie dostępnych kategorii dla rodziny
+    # Pobieranie danych pomocniczych
     family_members = User.objects.filter(family_id=user.family_id)
     categories = DataTransaction.objects.filter(
         id_user__in=family_members
     ).values_list('category', flat=True).distinct().order_by('category')
-    categories = [cat for cat in categories if cat]  # Usunięcie pustych wartości
+    categories = [cat for cat in categories if cat]
 
-    # Pobieranie członków rodziny
     family_members_info = User.objects.filter(family_id=user.family_id).values(
         'user_id', 'name', 'surname', 'role'
     ).order_by('name', 'surname')
 
     # Obliczanie sum finansowych
-    total_income = sum(float(t.income or 0) for t in transactions)
-    total_expense = sum(float(t.expense or 0) for t in transactions)
-    total_balance = total_income - total_expense
+    totals = TransactionFilterService.calculate_totals(transactions)
 
-    # Separacja wydatków i przychodów dla lepszej analizy
-    expenses_only = transactions.filter(expense__isnull=False, expense__gt=0)
-    incomes_only = transactions.filter(income__isnull=False, income__gt=0)
-
-    # Podsumowanie według członków rodziny (tylko dla przefiltrowanych transakcji)
+    # Podsumowanie według członków rodziny
     family_summary = []
     for member in family_members_info:
         member_transactions = transactions.filter(id_user__user_id=member['user_id'])
-        member_income = sum(float(t.income or 0) for t in member_transactions)
-        member_expense = sum(float(t.expense or 0) for t in member_transactions)
-
-        if member_transactions.exists():  # Dodaj tylko jeśli ma transakcje
+        if member_transactions.exists():
+            member_totals = TransactionFilterService.calculate_totals(member_transactions)
             family_summary.append({
                 'user_name': member['name'],
                 'user_surname': member['surname'],
                 'user_role': member['role'],
-                'total_income': member_income,
-                'total_expense': member_expense,
-                'total_balance': member_income - member_expense
+                **member_totals
             })
 
     context = {
         'user': user,
         'transactions': transactions,
-        'expenses_only': expenses_only,
-        'incomes_only': incomes_only,
+        'expenses_only': transactions.filter(expense__isnull=False, expense__gt=0),
+        'incomes_only': transactions.filter(income__isnull=False, income__gt=0),
         'categories': categories,
         'family_members': family_members_info,
         'family_summary': family_summary,
@@ -301,9 +259,7 @@ def filtered_family_transactions(request):
         'selected_type': transaction_type,
         'date_from': date_from,
         'date_to': date_to,
-        'total_income': total_income,
-        'total_expense': total_expense,
-        'total_balance': total_balance,
+        **totals
     }
 
     return render(request, 'filtered_family_transactions.html', context)
