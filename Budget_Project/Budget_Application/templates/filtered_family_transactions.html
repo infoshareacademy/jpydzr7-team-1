@@ -12,7 +12,7 @@
     <div class="col-12">
         <div class="card">
             <div aria-controls="filtersCollapse" aria-expanded="false"
-                 class="card-header bg-primary text-white"
+                 class="card-header bg-light"
                  data-bs-target="#filtersCollapse"
                  data-bs-toggle="collapse"
                  style="cursor: pointer;">
@@ -332,11 +332,8 @@
         Nie znaleziono transakcji spełniających wybrane kryteria filtrowania.
     </p>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary" href="?">
-            <i class="bi bi-funnel me-1"></i>Wyczyść filtry
-        </a>
-        <a class="btn btn-primary" href="{% url 'all-family-transactions' %}">
-            <i class="bi bi-eye me-1"></i>Zobacz wszystkie transakcje rodziny
+        <a class="btn btn-outline-secondary" href="?">
+            <i class="bi bi-x-circle me-1"></i>Wyczyść filtry
         </a>
     </div>
 </div>

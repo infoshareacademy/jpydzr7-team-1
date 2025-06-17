@@ -18,7 +18,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
 
     # ==================== TRANSAKCJE ====================
-    path('transactions/', AllUserTransactionsView.as_view(), name='all-user-transactions'),
     path('transactions/family/', AllFamilyTransactionsView.as_view(), name='all-family-transactions'),
     path('expenses/', AllUserExpensesView.as_view(), name='expenses'),
     path('expenses/family/', AllFamilyExpensesView.as_view(), name='family-expenses'),

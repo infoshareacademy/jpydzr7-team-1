@@ -10,7 +10,7 @@
     <div class="col-12">
         <div class="card">
             <div aria-controls="filtersCollapse" aria-expanded="false"
-                 class="card-header bg-primary text-white"
+                 class="card-header bg-light"
                  data-bs-target="#filtersCollapse"
                  data-bs-toggle="collapse"
                  style="cursor: pointer;">
@@ -293,16 +293,14 @@
     <h4 class="alert-heading">
         <i class="bi bi-info-circle me-2"></i>Brak transakcji
     </h4>
-    <p class="mb-0">
-        {% if selected_category or date_from or date_to %}
+    <p class="mb-3">
         Nie znaleziono transakcji spełniających wybrane kryteria filtrowania.
-        <a class="alert-link" href="{% url 'filtered-transactions' %}">Wyczyść filtry</a> lub
-        <a class="alert-link" href="{% url 'all-user-transactions' %}">zobacz wszystkie transakcje</a>.
-        {% else %}
-        Nie masz jeszcze żadnych transakcji.
-        <a class="alert-link" href="{% url 'all-user-transactions' %}">Przejdź do głównej strony transakcji</a>.
-        {% endif %}
     </p>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="?">
+            <i class="bi bi-x-circle me-1"></i>Wyczyść filtry
+        </a>
+    </div>
 </div>
 {% endif %}
 
