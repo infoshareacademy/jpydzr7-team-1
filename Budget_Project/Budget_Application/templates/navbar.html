@@ -17,10 +17,10 @@
           <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
         {% endif %}
     <li class="nav-item">
-      {% if request.resolver_match.url_name == 'all-user-transactions' %}
+      {% if request.resolver_match.url_name == 'filtered-transactions' %}
         <span class="btn btn-outline-primary disabled">Wszystkie transakcje</span>
       {% else %}
-        <a class="btn btn-outline-primary" href="{% url 'all-user-transactions' %}">Wszystkie transakcje</a>
+        <a class="btn btn-outline-primary" href="{% url 'filtered-transactions' %}">Wszystkie transakcje</a>
       {% endif %}
     </li>
 
