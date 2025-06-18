@@ -951,8 +951,6 @@ def add_category(request, type):
     form = AddCategory(user=request.user, form_type=type)
 
     if request.method == 'POST':
-        print("== POST ==")
-        print(request.POST)
 
         # Usuwanie
         if 'delete_id' in request.POST:
@@ -964,36 +962,27 @@ def add_category(request, type):
 
         # Edycja
         elif 'id' in request.POST:
-            print("== TRY EDIT ==")
             edit_id = request.POST.get('id')
             instance = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
             edit_form = AddCategory(request.POST, instance=instance, user=request.user, form_type=type)
             if edit_form.is_valid():
-                print("== EDIT FORM VALID ==")
                 category = edit_form.save(commit=False)
                 category.user_id_id = request.user.user_id
                 category.category_type = type
                 category.save()
                 messages.success(request, 'Kategoria została zaktualizowana.')
                 return redirect('add_category', type=type)
-            else:
-                print("== EDIT FORM INVALID ==")
-                print(edit_form.errors)
 
         # Dodawanie
         else:
             form = AddCategory(request.POST, user=request.user, form_type=type)
             if form.is_valid():
-                print("== NEW FORM VALID ==")
                 category = form.save(commit=False)
                 category.user_id_id = request.user.user_id
                 category.category_type = type
                 category.save()
                 messages.success(request, 'Kategoria została dodana.')
                 return redirect('add_category', type=type)
-            else:
-                print("== NEW FORM INVALID ==")
-                print(form.errors)
 
     # GET z parametrem edit
     elif edit_id:
