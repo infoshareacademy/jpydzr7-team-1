@@ -89,48 +89,6 @@ class TransactionFilterService:
 
 
 # === SECTION: USER & FAMILY TRANSACTION VIEWS ===
-@method_decorator(login_required, name='dispatch')
-class AllUserExpensesView(View):
-    """
-    Provides functionality to retrieve, process, and render expense transaction
-    data for the currently logged-in user.
-    """
-
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return redirect('login')
-
-        transactions = DataTransaction.objects.filter(
-            id_user=request.user,
-            expense__gt=0
-        )
-
-        expenses_list = []
-        total_expense = 0
-
-        for transaction in transactions:
-            expense = float(transaction.expense) if transaction.expense else 0
-            total_expense += expense
-            expenses_list.append({
-                'transaction_id': transaction.transaction_id,
-                'transaction_date': transaction.transaction_date,
-                'expense': expense,
-                'description': transaction.description,
-                'category': transaction.category,
-                'transaction_type': transaction.transaction_type
-            })
-
-        context = {
-            'transactions': expenses_list,
-            'total_expense': total_expense,
-            'user_id': request.user.user_id,
-            'categories': get_unique_categories(),
-            'selected_category': ''
-        }
-
-        return render(request, 'expenses.html', context)
-
-
 def get_unique_categories():
     """Zwraca listę unikalnych kategorii transakcji"""
     return DataTransaction.objects.values_list('category', flat=True).distinct().order_by('category')

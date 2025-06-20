@@ -2,7 +2,6 @@ from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
 from .views import (
-    AllUserExpensesView,
     MyPasswordResetView,
     filtered_transactions,
 )
@@ -13,7 +12,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
 
     # ==================== TRANSAKCJE ====================
-    path('expenses/', AllUserExpensesView.as_view(), name='expenses'),
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
     path('transactions/family/filter/', views.filtered_family_transactions, name='filtered-family-transactions'),
 
