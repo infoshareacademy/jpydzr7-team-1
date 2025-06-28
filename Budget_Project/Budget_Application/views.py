@@ -655,11 +655,6 @@ def logout_view(request):
 
 @login_required
 def create_family(request):
-
-    if request.method == "GET":
-        storage = messages.get_messages(request)
-        for message in storage:
-            pass
     if request.method == "POST":
         form = FamilyForm(request.POST)
         if form.is_valid():
