@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from .models import Family, FamilyInvitation, User
+from .models import Family, FamilyInvitation, User, DataTransaction, Categories
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
@@ -428,3 +428,84 @@ class JoinRequestForm(forms.Form):
         required=False,
         label="",
     )
+
+
+
+
+class AddTransaction(forms.ModelForm):
+    TYPY_TRANSAKCJI = [
+        ('one off', 'jednorazowa'),
+        ('monthly', 'miesięczna'),
+    ]
+
+    # Nadpisujemy pole tylko w formularzu
+    transaction_type = forms.ChoiceField(
+        label='Typ transakcji',
+        choices=TYPY_TRANSAKCJI,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        required=False  # jeśli pole może być puste
+    )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')  # pobieramy usera z widoku
+        form_type = kwargs.pop('form_type', None)
+        super().__init__(*args, **kwargs)
+        self.fields['id_user'].queryset = User.objects.filter(family=user.family)
+        self.fields['income'].required = True
+        self.fields['expense'].required = True
+        self.fields['category'].queryset = Categories.objects.filter(
+            category_type=form_type,
+            user_id__family=user.family
+        )
+        self.fields['description'].required = False
+        self.fields['transaction_type'].required = True
+        if form_type == 'income':
+            self.fields['expense'].widget = forms.HiddenInput()
+            self.fields['expense'].required = False
+            self.fields['income'].required = True
+        elif form_type == 'expense':
+            self.fields['income'].widget = forms.HiddenInput()
+            self.fields['income'].required = False
+            self.fields['expense'].required = True
+    class Meta:
+        model = DataTransaction
+        fields = ['id_user','transaction_date', 'income', 'expense', 'category', 'description', 'transaction_type']
+        widgets = {
+            'transaction_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'income': forms.NumberInput(attrs={'class': 'form-control'}),
+            'expense': forms.NumberInput(attrs={'class': 'form-control'}),
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
+
+            # transaction_type pomijamy tutaj, bo nadpisaliśmy je wyżej
+        }
+        labels = {
+            'id_user': 'Użytkownik',
+            'transaction_date': 'Data transakcji',
+            'income': 'Przychód',
+            'expense': 'Wydatek',
+            'category': 'Kategoria',
+            'description': 'Opis (opcjonalnie)',
+
+        }
+
+
+class AddCategory(forms.ModelForm):
+#TODO: dodajmy walidację na dublowanie kategorii
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # pobieramy usera z widoku
+        form_type = kwargs.pop('form_type', None)
+        super().__init__(*args, **kwargs)
+
+
+
+    class Meta:
+        model = Categories
+        fields = ['category_name']
+        widgets = {
+        'category_name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+        'category_name': 'Nazwa kategorii'
+
+        }
