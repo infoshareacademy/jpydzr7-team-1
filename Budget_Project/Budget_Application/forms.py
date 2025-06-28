@@ -490,6 +490,7 @@ class AddTransaction(forms.ModelForm):
 
 
 class AddCategory(forms.ModelForm):
+#TODO: dodajmy walidację na dublowanie kategorii
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # pobieramy usera z widoku
