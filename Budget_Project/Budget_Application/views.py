@@ -584,7 +584,7 @@ def add_transaction(request, type):
         form = AddTransaction(request.POST, user=request.user, form_type=type)
         if form.is_valid():
             form.save()
-            return redirect("all-user-transactions")  # nazwa widoku sukcesu
+            return redirect("filtered-transactions")  # nazwa widoku sukcesu
     else:
         form = AddTransaction(user=request.user, form_type=type)
 
