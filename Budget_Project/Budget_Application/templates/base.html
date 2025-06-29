@@ -98,6 +98,17 @@
             .mobile-content {
                 padding: 60px 1rem 1rem 1rem;
             }
+            /* Disabled switch styles */
+            .form-check-input:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+            .switch-label.text-muted-light {
+                opacity: 0.5;
+            }
+            .switch-container:has(.form-check-input:disabled) .switch-label:last-child {
+                opacity: 0.5;
+            }
         }
 
         /* Mobile Form Styles */
@@ -234,16 +245,21 @@
                         <span class="switch-label text-muted">
                             <i class="bi bi-person me-1"></i>Moje
                         </span>
-                        <div class="switch-wrapper">
-                            <div class="form-check form-switch"
-                                 data-bs-placement="top"
-                                 data-bs-toggle="tooltip"
-                                 title="Przełącz między widokiem twoich transakcji, a całej Twojej rodziny.">
-                                <input class="form-check-input" id="viewToggleSwitch" onchange="toggleTransactionView()" role="switch"
-                                       type="checkbox">
+                            <div class="switch-wrapper">
+                                <div class="form-check form-switch"
+                                     data-bs-placement="top"
+                                     data-bs-toggle="tooltip"
+                                     data-tooltip-family="Przełącz między widokiem twoich transakcji, a całej Twojej rodziny."
+                                     data-tooltip-no-family="Nie należysz do rodziny. Utwórz rodzinę, aby skorzystać z tej funkcji.">
+                                    <input class="form-check-input"
+                                           id="viewToggleSwitch"
+                                           onchange="toggleTransactionView()"
+                                           role="switch"
+                                           type="checkbox"
+                                           {% if not user.family_id %}disabled{% endif %}>
+                                </div>
                             </div>
-                        </div>
-                        <span class="switch-label text-muted">
+                        <span class="switch-label text-muted {% if not user.family_id %}text-muted-light{% endif %}">
                             <i class="bi bi-people me-1"></i>Rodzina
                         </span>
                     </div>
@@ -339,9 +355,19 @@
     }
 
     function initializeTooltips() {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+
+        tooltipElements.forEach(element => {
+            if (element.hasAttribute('data-tooltip-family') && element.hasAttribute('data-tooltip-no-family')) {
+                const hasFamily = {{ user.family_id|yesno:"true,false" }};
+                const tooltipText = hasFamily ?
+                    element.getAttribute('data-tooltip-family') :
+                    element.getAttribute('data-tooltip-no-family');
+
+                element.setAttribute('title', tooltipText);
+            }
+
+            new bootstrap.Tooltip(element);
         });
     }
 
@@ -366,6 +392,12 @@
 
     function toggleTransactionView() {
         const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+
+        // Sprawdź czy switch nie jest zablokowany
+        if (toggle.disabled) {
+            return;
+        }
+
         const currentPath = window.location.pathname;
         const currentSearch = window.location.search;
 
@@ -379,6 +411,24 @@
         }
 
         window.location.href = targetPath;
+        updateAllTransactionsLink();
+    }
+
+    function setInitialToggleState() {
+        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
+        const currentPath = window.location.pathname;
+
+        // Jeśli switch jest zablokowany, zawsze ustaw na pozycję "Moje" (false)
+        if (toggle.disabled) {
+            toggle.checked = false;
+            return;
+        }
+
+        const isFamilyView = currentPath.includes('/transactions/family/') ||
+                           currentPath.includes('/expenses/family/') ||
+                           currentPath.includes('/incomes/family/');
+
+        toggle.checked = isFamilyView;
         updateAllTransactionsLink();
     }
 
