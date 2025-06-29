@@ -216,6 +216,7 @@ def filtered_family_transactions(request):
 
     context = {
         'user': user,
+        'family_name': user.family.family_name if user.family else None,
         'transactions': transactions,
         'expenses_only': transactions.filter(expense__isnull=False, expense__gt=0),
         'incomes_only': transactions.filter(income__isnull=False, income__gt=0),
