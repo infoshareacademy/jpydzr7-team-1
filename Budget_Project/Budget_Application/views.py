@@ -62,7 +62,8 @@ class TransactionFilterService:
             query &= Q(expense__isnull=False) & Q(expense__gt=0)
 
         if category:
-            query &= Q(category=category)
+            # Zmiana: filtrowanie po nazwie kategorii zamiast po ID
+            query &= Q(category__category_name=category)
 
         date_from_obj = TransactionFilterService.parse_date(date_from)
         if date_from_obj:
@@ -87,9 +88,17 @@ class TransactionFilterService:
 
 
 # === SECTION: USER & FAMILY TRANSACTION VIEWS ===
-def get_unique_categories():
-    """Zwraca listę unikalnych kategorii transakcji"""
-    return DataTransaction.objects.values_list('category', flat=True).distinct().order_by('category')
+def get_unique_categories(user=None):
+    """Zwraca listę unikalnych nazw kategorii transakcji dla danego użytkownika"""
+    if user:
+        categories = DataTransaction.objects.filter(
+            id_user__family=user.family
+        ).select_related('category').values('category__category_name').distinct().order_by('category__category_name')
+    else:
+        categories = DataTransaction.objects.select_related('category').values(
+            'category__category_name').distinct().order_by('category__category_name')
+
+    return [cat['category__category_name'] for cat in categories if cat['category__category_name'] is not None]
 
 
 @login_required
@@ -116,7 +125,7 @@ def filtered_transactions(request):
         'user': request.user,
         'user_id': request.user.user_id,
         'transactions': transactions,
-        'categories': get_unique_categories(),
+        'categories': get_unique_categories(request.user),  # Dodaj parametr user
         'selected_category': selected_category,
         'date_from': date_from,
         'date_to': date_to,
@@ -150,7 +159,7 @@ def filtered_family_transactions(request):
 
     # Aplikowanie filtrów
     if selected_category:
-        filtered_transactions = filtered_transactions.filter(category=selected_category)
+        filtered_transactions = filtered_transactions.filter(category__category_name=selected_category)
 
     if selected_user:
         try:
@@ -177,9 +186,12 @@ def filtered_family_transactions(request):
 
     # Pobieranie danych pomocniczych
     family_members = User.objects.filter(family_id=user.family_id)
+
+    # ZMIANA: Prawidłowe pobieranie nazw kategorii
     categories = DataTransaction.objects.filter(
         id_user__in=family_members
-    ).values_list('category', flat=True).distinct().order_by('category')
+    ).select_related('category').values_list('category__category_name', flat=True).distinct().order_by(
+        'category__category_name')
     categories = [cat for cat in categories if cat]
 
     family_members_info = User.objects.filter(family_id=user.family_id).values(
