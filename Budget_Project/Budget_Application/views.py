@@ -25,12 +25,10 @@ from .forms import (
     MyPasswordChangeForm,
     JoinFamilyForm,
     JoinRequestForm,
-    UserForm
+    UserForm, AddTransaction, AddCategory
 )
-from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code, \
-    FamilyTransactionView
+from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code, FamilyTransactionView, Categories
 from .services import UserService
-
 from datetime import datetime
 from django.db.models import Q
 import uuid
@@ -579,3 +577,74 @@ class MyPasswordResetView(PasswordResetView):
     def form_valid(self, form):
         response = super().form_valid(form)
         return response
+
+@login_required
+def add_transaction(request, type):
+    if request.method == 'POST':
+        form = AddTransaction(request.POST, user=request.user, form_type=type)
+        if form.is_valid():
+            form.save()
+            return redirect("all-user-transactions")  # nazwa widoku sukcesu
+    else:
+        form = AddTransaction(user=request.user, form_type=type)
+
+    return render(request, 'add_transaction.html', {'form': form, 'form_type': type})
+
+
+
+@login_required
+def add_category(request, type):
+    edit_id = request.GET.get('edit')
+    edit_form = None
+
+    # domyślnie: formularz dodawania
+    form = AddCategory(user=request.user, form_type=type)
+
+    if request.method == 'POST':
+
+        # Usuwanie
+        if 'delete_id' in request.POST:
+            delete_id = request.POST.get('delete_id')
+            category_to_delete = get_object_or_404(Categories, pk=delete_id, user_id__family=request.user.family)
+            category_to_delete.delete()
+            messages.success(request, 'Kategoria została usunięta.')
+            return redirect('add_category', type=type)
+
+        # Edycja
+        elif 'id' in request.POST:
+            edit_id = request.POST.get('id')
+            instance = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
+            edit_form = AddCategory(request.POST, instance=instance, user=request.user, form_type=type)
+            if edit_form.is_valid():
+                category = edit_form.save(commit=False)
+                category.user_id_id = request.user.user_id
+                category.category_type = type
+                category.save()
+                messages.success(request, 'Kategoria została zaktualizowana.')
+                return redirect('add_category', type=type)
+
+        # Dodawanie
+        else:
+            form = AddCategory(request.POST, user=request.user, form_type=type)
+            if form.is_valid():
+                category = form.save(commit=False)
+                category.user_id_id = request.user.user_id
+                category.category_type = type
+                category.save()
+                messages.success(request, 'Kategoria została dodana.')
+                return redirect('add_category', type=type)
+
+    # GET z parametrem edit
+    elif edit_id:
+        edytowana = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
+        edit_form = AddCategory(instance=edytowana, user=request.user, form_type=type)
+
+    kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at')
+
+    return render(request, 'add_category.html', {
+        'form': form,
+        'edit_form': edit_form,
+        'kategorie': kategorie,
+        'form_type': type,
+        'edit_id': int(edit_id) if edit_id else None,
+    })

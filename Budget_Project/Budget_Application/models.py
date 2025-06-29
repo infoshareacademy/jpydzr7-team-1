@@ -16,7 +16,7 @@ class DataTransaction(models.Model):
     income = models.FloatField(blank=True, null=True)
     expense = models.FloatField(blank=True, null=True)
     description = models.CharField(blank=True, null=True, max_length=255)
-    category = models.CharField(blank=True, null=True, max_length=255)
+    category = models.ForeignKey('Categories', on_delete=models.CASCADE)
     transaction_type = models.CharField(blank=True, null=True, max_length=255)
 
     class Meta:
@@ -127,6 +127,7 @@ def generate_access_code(length=6):
 
 
 class Family(models.Model):
+
     family_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     family_name = models.CharField(max_length=255, unique=True)
     created_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, related_name='created_families')
@@ -231,3 +232,19 @@ class JoinRequest(models.Model):
     def __str__(self):
         return f"{self.user} -> {self.family} ({'accepted' if self.accepted else 'pending'})"
 
+class Categories(models.Model):
+
+    ROLE_CHOICES = (
+        ('income', 'income'),
+        ('expense', 'expense'),
+    )
+    category_name = models.CharField(default= None, max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user_id = models.ForeignKey('User', on_delete=models.CASCADE)
+    category_type = models.CharField(max_length=10, choices=ROLE_CHOICES)
+
+    class Meta:
+        db_table = 'CATEGORIES'
+
+    def __str__(self):
+        return self.category_name

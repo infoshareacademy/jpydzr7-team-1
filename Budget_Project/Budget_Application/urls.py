@@ -50,4 +50,9 @@ urlpatterns = [
     path("create_kid/", views.create_kid, name="create_kid"),
     path('kid/<uuid:kid_id>/block/', views.block_kid, name='block_kid'),
     path('kid/<uuid:kid_id>/unblock/', views.unblock_kid, name='unblock_kid'),
+
+    # ==================== DODANIE TRANSAKCJI ====================
+    path("add_transaction/<str:type>", views.add_transaction, name="add_transaction"),
+    # ==================== DODANIE KATEGORII ====================
+    path("add_category/<str:type>", views.add_category, name="add_category"),
 ]
