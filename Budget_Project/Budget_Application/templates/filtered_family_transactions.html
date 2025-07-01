@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+
+{% block title %}Filtrowane transakcje rodziny{% endblock %}
+
+{% block menu_family %}active{% endblock %}
+
+{% block header_title %}Transakcje rodziny <em>{{ family_name|default:""|capfirst }}</em>{% endblock %}
+
+{% block content %}
+<!-- Zaawansowane filtry -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div aria-controls="filtersCollapse" aria-expanded="false"
+                 class="card-header bg-light"
+                 data-bs-target="#filtersCollapse"
+                 data-bs-toggle="collapse"
+                 style="cursor: pointer;">
+                <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-funnel me-2"></i>Zaawansowane filtry rodziny
+                        <small class="ms-2 opacity-75">(kliknij, aby rozwinąć)</small>
+                    </span>
+                    <i class="bi bi-chevron-down transition-all" id="chevronIcon"></i>
+                </h5>
+            </div>
+            <div class="collapse" id="filtersCollapse">
+                <div class="card-body">
+                    <!-- Filtry kategorii -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-tags me-1"></i>Kategoria:
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-outline-secondary btn-sm {% if not selected_category %}active{% endif %}"
+                               href="?{% if selected_user %}user={{ selected_user }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}">
+                                <i class="bi bi-grid me-1"></i>Wszystkie kategorie
+                            </a>
+                            {% for category in categories %}
+                            <a class="btn btn-outline-primary btn-sm {% if selected_category == category %}active{% endif %}"
+                               href="?category={{ category|urlencode }}{% if selected_user %}&user={{ selected_user }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                {{ category }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Filtry członków rodziny -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-people me-1"></i>Członek rodziny:
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-outline-secondary btn-sm {% if not selected_user %}active{% endif %}"
+                               href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}">
+                                <i class="bi bi-people me-1"></i>Wszyscy członkowie
+                            </a>
+                            {% for member in family_members %}
+                            <a class="btn btn-outline-info btn-sm {% if selected_user == member.user_id|stringformat:'s' %}active{% endif %}"
+                               href="?user={{ member.user_id }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                                {% if member.role == 'kid' %}
+                                <i class="bi bi-person-hearts me-1"></i>
+                                {% else %}
+                                <i class="bi bi-person-fill me-1"></i>
+                                {% endif %}
+                                {{ member.name }} {{ member.surname }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Filtry dat -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-calendar me-1"></i>Zakres dat:
+                        </h6>
+                        <form class="d-flex flex-wrap align-items-end gap-2" method="GET">
+                            <!-- Ukryte pola dla zachowania innych filtrów -->
+                            {% if selected_category %}
+                            <input name="category" type="hidden" value="{{ selected_category }}">
+                            {% endif %}
+                            {% if selected_user %}
+                            <input name="user" type="hidden" value="{{ selected_user }}">
+                            {% endif %}
+
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="form-label mb-0 text-nowrap" for="date_from">Od:</label>
+                                <input class="form-control form-control-sm" id="date_from" name="date_from" style="width: 150px;"
+                                       type="date" value="{{ date_from }}">
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="form-label mb-0 text-nowrap" for="date_to">Do:</label>
+                                <input class="form-control form-control-sm" id="date_to" name="date_to" style="width: 150px;"
+                                       type="date" value="{{ date_to }}">
+                            </div>
+
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-primary btn-sm" type="submit">
+                                    <i class="bi bi-search me-1"></i>Filtruj
+                                </button>
+                                <a class="btn btn-outline-secondary btn-sm" href="?">
+                                    <i class="bi bi-x-circle me-1"></i>Wyczyść wszystko
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Podsumowanie finansowe -->
+<div class="row mt-4 mb-4">
+    <div class="col-4">
+        <div class="card text-center border-success">
+            <div class="card-body py-3">
+                <h5 class="text-success mb-0">
+                    <i class="bi bi-arrow-up-circle me-2"></i>{{ total_income|floatformat:2 }} zł przychodów
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card text-center border-danger">
+            <div class="card-body py-3">
+                <h5 class="text-danger mb-0">
+                    <i class="bi bi-arrow-down-circle me-2"></i>{{ total_expense|floatformat:2 }} zł wydatków
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card text-center border-{% if total_balance >= 0 %}success{% else %}danger{% endif %}">
+            <div class="card-body py-3">
+                <h5 class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %} mb-0">
+                    <i class="bi bi-calculator me-2"></i>Bilans: {{ total_balance|floatformat:2 }} zł
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if transactions %}
+<!-- Główna tabela transakcji -->
+<div class="card">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- Lewa strona - tytuł zawsze widoczny -->
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul me-2"></i>Transakcje rodziny
+                <small class="text-muted">({{ transactions.count }} transakcji)</small>
+            </h5>
+
+            <!-- Prawa strona - aktywne filtry -->
+            {% if selected_category or selected_user or date_from or date_to %}
+            <div class="d-flex flex-wrap align-items-center">
+                <small class="text-muted me-2">
+                    <i class="bi bi-funnel me-1"></i>Aktywne filtry:
+                </small>
+                {% if selected_category %}
+                <span class="badge bg-primary me-1 mb-1">
+                                  <i class="bi bi-tag me-1"></i>{{ selected_category }}
+                                  <a class="text-white text-decoration-none ms-1"
+                                     href="?{% if selected_user %}user={{ selected_user }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}">×</a>
+                              </span>
+                {% endif %}
+                {% if selected_user %}
+                {% for member in family_members %}
+                {% if member.user_id|stringformat:'s' == selected_user %}
+                <span class="badge bg-info me-1 mb-1">
+                                          <i class="bi bi-person me-1"></i>{{ member.name }} {{ member.surname }}
+                                          <a class="text-white text-decoration-none ms-1"
+                                             href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}">×</a>
+                                      </span>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                {% if date_from %}
+                <span class="badge bg-success me-1 mb-1">
+                                  <i class="bi bi-calendar me-1"></i>Od: {{ date_from }}
+                                  <a class="text-white text-decoration-none ms-1"
+                                     href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_user %}user={{ selected_user }}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}">×</a>
+                              </span>
+                {% endif %}
+                {% if date_to %}
+                <span class="badge bg-success me-1 mb-1">
+                                  <i class="bi bi-calendar me-1"></i>Do: {{ date_to }}
+                                  <a class="text-white text-decoration-none ms-1"
+                                     href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_user %}user={{ selected_user }}&{% endif %}{% if date_from %}date_from={{ date_from }}{% endif %}">×</a>
+                              </span>
+                {% endif %}
+                <a class="btn btn-outline-secondary btn-sm ms-2" href="?">
+                    <i class="bi bi-x-circle me-1"></i>Wyczyść wszystkie
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th>Data</th>
+                    <th>Członek rodziny</th>
+                    <th>Kwota</th>
+                    <th>Opis</th>
+                    <th>Kategoria</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.transaction_date|date:"d.m.Y" }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                                            <span class="fw-bold me-2">
+                                                {{ transaction.user_name }} {{ transaction.user_surname }}
+                                            </span>
+                            {% if transaction.user_role == 'kid' %}
+                            <span class="badge bg-info text-dark">
+                                                    <i class="bi bi-person-hearts me-1"></i>dziecko
+                                                </span>
+                            {% elif transaction.user_role == 'adult' %}
+                            <span class="badge bg-secondary">
+                                                    <i class="bi bi-person-fill me-1"></i>dorosły
+                                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="{% if transaction.income %}text-success{% else %}text-danger{% endif %} fw-bold">
+                        {% if transaction.income %}
+                        <i class="bi bi-plus-circle me-1"></i>{{ transaction.income|floatformat:2 }} zł
+                        {% elif transaction.expense %}
+                        <i class="bi bi-dash-circle me-1"></i>{{ transaction.expense|floatformat:2 }} zł
+                        {% endif %}
+                    </td>
+                    <td>{{ transaction.description|default:"-" }}</td>
+                    <td>
+                        {% if transaction.category %}
+                        <a class="badge bg-light text-dark text-decoration-none"
+                           href="?category={{ transaction.category|urlencode }}{% if selected_user %}&user={{ selected_user }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">
+                            {{ transaction.category }}
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary">
+                <tr class="fw-bold">
+                    <td colspan="2">
+                        <i class="bi bi-calculator me-2"></i>Podsumowanie:
+                    </td>
+                    <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                        {{ total_balance|floatformat:2 }} zł
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Podsumowanie według członków -->
+{% if family_summary %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>Podsumowanie według członków rodziny
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for member in family_summary %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-secondary h-100">
+                            <div class="card-body">
+                                <h6 class="card-title d-flex align-items-center">
+                                    {% if member.user_role == 'kid' %}
+                                    <i class="bi bi-person-hearts text-info me-2"></i>
+                                    {% else %}
+                                    <i class="bi bi-person-fill text-secondary me-2"></i>
+                                    {% endif %}
+                                    {{ member.user_name }} {{ member.user_surname }}
+                                </h6>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Przychody</small>
+                                        <span class="text-success fw-bold">
+                                                        {{ member.total_income|floatformat:2 }} zł
+                                                    </span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Wydatki</small>
+                                        <span class="text-danger fw-bold">
+                                                        {{ member.total_expense|floatformat:2 }} zł
+                                                    </span>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div class="text-center">
+                                    <small class="text-muted d-block">Bilans</small>
+                                    <strong class="{% if member.total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ member.total_balance|floatformat:2 }} zł
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">
+        <i class="bi bi-info-circle me-2"></i>Brak transakcji
+    </h4>
+    <p class="mb-3">
+        Nie znaleziono transakcji spełniających wybrane kryteria filtrowania.
+    </p>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="?">
+            <i class="bi bi-x-circle me-1"></i>Wyczyść filtry
+        </a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tooltip dla przycisków filtrów
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Automatyczne przesyłanie formularza przy zmianie select'ów (opcjonalne)
+        const autoSubmitElements = document.querySelectorAll('#category, #user');
+        autoSubmitElements.forEach(element => {
+            element.addEventListener('change', function () {
+                // Możesz odkomentować poniższą linię jeśli chcesz automatyczne filtrowanie
+                // this.form.submit();
+            });
+        });
+    });
+</script>
+{% endblock %}
