@@ -7,48 +7,63 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-<div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-  <ul class="navbar-nav gap-2">
-    {% if user.is_authenticated %}
-      <li class="nav-item">
-        {% if request.resolver_match.url_name == 'user_detail' %}
-          <span class="btn btn-outline-primary disabled">Moje konto</span>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav gap-2">
+        {% if user.is_authenticated %}
+          <li class="nav-item">
+            {% if request.resolver_match.url_name == 'user_detail' %}
+              <span class="btn btn-outline-primary disabled">Moje konto</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
+            {% endif %}
+          </li>
+
+          <li class="nav-item">
+            {% if request.resolver_match.url_name == 'filtered-transactions' %}
+              <span class="btn btn-outline-primary disabled">Wszystkie transakcje</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'filtered-transactions' %}">Wszystkie transakcje</a>
+            {% endif %}
+          </li>
+
+          <li class="nav-item">
+            {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'income' %}
+              <span class="btn btn-outline-primary disabled">Dodaj przychód</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'income' %}">Dodaj przychód</a>
+            {% endif %}
+          </li>
+
+          <li class="nav-item">
+            {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'expense' %}
+              <span class="btn btn-outline-primary disabled">Dodaj wydatek</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'expense' %}">Dodaj wydatek</a>
+            {% endif %}
+          </li>
+
+          <!-- NOWA OPCJA: Przelicz walutę -->
+          <li class="nav-item">
+            {% if request.resolver_match.url_name == 'currency_converter' %}
+              <span class="btn btn-outline-primary disabled">Przelicz walutę</span>
+            {% else %}
+              <a class="btn btn-outline-primary" href="{% url 'currency_converter' %}">Przelicz walutę</a>
+            {% endif %}
+          </li>
+
+          <li class="nav-item">
+            <a class="btn btn-outline-danger" href="{% url 'logout' %}">Wyloguj się</a>
+          </li>
+
         {% else %}
-          <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
+          <li class="nav-item">
+            <a class="btn btn-outline-primary" href="{% url 'create_user_no_family' %}">Zarejestruj się</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-primary" href="{% url 'login' %}">Zaloguj się</a>
+          </li>
         {% endif %}
-    <li class="nav-item">
-      {% if request.resolver_match.url_name == 'filtered-transactions' %}
-        <span class="btn btn-outline-primary disabled">Wszystkie transakcje</span>
-      {% else %}
-        <a class="btn btn-outline-primary" href="{% url 'filtered-transactions' %}">Wszystkie transakcje</a>
-      {% endif %}
-    </li>
-    <li class="nav-item">
-      {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'income' %}
-        <span class="btn btn-outline-primary disabled">Dodaj przychód</span>
-      {% else %}
-        <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'income' %}">Dodaj przychód</a>
-      {% endif %}
-    </li>
-        <li class="nav-item">
-      {% if request.resolver_match.url_name == 'add_transaction' and request.resolver_match.kwargs.type == 'expense' %}
-        <span class="btn btn-outline-primary disabled">Dodaj wydatek</span>
-      {% else %}
-        <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'expense' %}">Dodaj wydatek</a>
-      {% endif %}
-    </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-danger" href="{% url 'logout' %}">Wyloguj się</a>
-        </li>
-    {% else %}
-      <li class="nav-item">
-        <a class="btn btn-outline-primary" href="{% url 'create_user_no_family' %}">Zarejestruj się</a>
-      </li>
-      <li class="nav-item">
-        <a class="btn btn-primary" href="{% url 'login' %}">Zaloguj się</a>
-      </li>
-    {% endif %}
-  </ul>
-</div>
+      </ul>
+    </div>
   </div>
 </nav>
