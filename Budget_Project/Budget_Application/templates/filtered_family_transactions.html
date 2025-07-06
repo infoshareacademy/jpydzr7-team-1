@@ -1,30 +1,27 @@
 {% extends 'base.html' %}
-
 {% block title %}Filtrowane transakcje rodziny{% endblock %}
-
 {% block menu_family %}active{% endblock %}
-
 {% block header_title %}Transakcje rodziny <em>{{ family_name|default:""|capfirst }}</em>{% endblock %}
-
 {% block content %}
 <!-- Zaawansowane filtry -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div aria-controls="filtersCollapse" aria-expanded="false"
-                 class="card-header bg-light"
+            <div class="card-header bg-light" style="cursor: pointer;"
                  data-bs-target="#filtersCollapse"
                  data-bs-toggle="collapse"
-                 style="cursor: pointer;">
+                 aria-controls="filtersCollapse"
+                 aria-expanded="{% if selected_category or selected_user or date_from or date_to %}true{% else %}false{% endif %}"
+                 id="filtersToggleHeader">
                 <h5 class="mb-0 d-flex justify-content-between align-items-center">
                     <span>
                         <i class="bi bi-funnel me-2"></i>Zaawansowane filtry rodziny
-                        <small class="ms-2 opacity-75">(kliknij, aby rozwinąć)</small>
+                        <small class="ms-2 opacity-75">(kliknij, aby {% if selected_category or selected_user or date_from or date_to %}zwinąć{% else %}rozwinąć{% endif %})</small>
                     </span>
-                    <i class="bi bi-chevron-down transition-all" id="chevronIcon"></i>
+                    <i class="bi bi-chevron-down transition-all {% if selected_category or selected_user or date_from or date_to %}rotate-180{% endif %}" id="chevronIcon"></i>
                 </h5>
             </div>
-            <div class="collapse" id="filtersCollapse">
+            <div class="collapse {% if selected_category or selected_user or date_from or date_to %}show{% endif %}" id="filtersCollapse">
                 <div class="card-body">
                     <!-- Filtry kategorii -->
                     <div class="mb-3">
@@ -44,7 +41,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <!-- Filtry członków rodziny -->
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">
@@ -68,7 +64,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <!-- Filtry dat -->
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">
@@ -82,19 +77,16 @@
                             {% if selected_user %}
                             <input name="user" type="hidden" value="{{ selected_user }}">
                             {% endif %}
-
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap" for="date_from">Od:</label>
                                 <input class="form-control form-control-sm" id="date_from" name="date_from" style="width: 150px;"
                                        type="date" value="{{ date_from }}">
                             </div>
-
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap" for="date_to">Do:</label>
                                 <input class="form-control form-control-sm" id="date_to" name="date_to" style="width: 150px;"
                                        type="date" value="{{ date_to }}">
                             </div>
-
                             <div class="btn-group" role="group">
                                 <button class="btn btn-primary btn-sm" type="submit">
                                     <i class="bi bi-search me-1"></i>Filtruj
@@ -110,7 +102,6 @@
         </div>
     </div>
 </div>
-
 <!-- Podsumowanie finansowe -->
 <div class="row mt-4 mb-4">
     <div class="col-4">
@@ -141,7 +132,6 @@
         </div>
     </div>
 </div>
-
 {% if transactions %}
 <!-- Główna tabela transakcji -->
 <div class="card">
@@ -152,7 +142,6 @@
                 <i class="bi bi-list-ul me-2"></i>Transakcje rodziny
                 <small class="text-muted">({{ transactions.count }} transakcji)</small>
             </h5>
-
             <!-- Prawa strona - aktywne filtry -->
             {% if selected_category or selected_user or date_from or date_to %}
             <div class="d-flex flex-wrap align-items-center">
@@ -266,7 +255,6 @@
         </div>
     </div>
 </div>
-
 <!-- Podsumowanie według członków -->
 {% if family_summary %}
 <div class="row mt-4">
@@ -322,7 +310,6 @@
     </div>
 </div>
 {% endif %}
-
 {% else %}
 <div class="alert alert-info">
     <h4 class="alert-heading">
@@ -338,26 +325,48 @@
     </div>
 </div>
 {% endif %}
-
 {% endblock %}
-
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Ustawienie daty dla pola 'do' na aktualną
+        const dateToInput = document.getElementById('date_to');
+        if (dateToInput && !dateToInput.value) {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            dateToInput.value = formattedDate;
+        }
+
+        // Obsługa animacji chevron przy zwijaniu/rozwijaniu filtrów
+        const filtersCollapse = document.getElementById('filtersCollapse');
+        const chevronIcon = document.getElementById('chevronIcon');
+
+        if (filtersCollapse && chevronIcon) {
+            filtersCollapse.addEventListener('show.bs.collapse', function () {
+                chevronIcon.classList.add('rotate-180');
+            });
+
+            filtersCollapse.addEventListener('hide.bs.collapse', function () {
+                chevronIcon.classList.remove('rotate-180');
+            });
+        }
+
         // Tooltip dla przycisków filtrów
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-
-        // Automatyczne przesyłanie formularza przy zmianie select'ów (opcjonalne)
-        const autoSubmitElements = document.querySelectorAll('#category, #user');
-        autoSubmitElements.forEach(element => {
-            element.addEventListener('change', function () {
-                // Możesz odkomentować poniższą linię jeśli chcesz automatyczne filtrowanie
-                // this.form.submit();
-            });
-        });
     });
 </script>
+
+<style>
+    .transition-all {
+        transition: transform 0.3s ease;
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+</style>
+
 {% endblock %}
