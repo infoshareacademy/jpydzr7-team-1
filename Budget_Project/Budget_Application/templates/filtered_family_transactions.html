@@ -16,7 +16,7 @@
                 <h5 class="mb-0 d-flex justify-content-between align-items-center">
                     <span>
                         <i class="bi bi-funnel me-2"></i>Zaawansowane filtry rodziny
-                        <small class="ms-2 opacity-75">(kliknij, aby {% if selected_category or selected_user or date_from or date_to %}zwinąć{% else %}rozwinąć{% endif %})</small>
+                        <small class="ms-2 opacity-75">(kliknij, aby rozwinąć)</small>
                     </span>
                     <i class="bi bi-chevron-down transition-all {% if selected_category or selected_user or date_from or date_to %}rotate-180{% endif %}" id="chevronIcon"></i>
                 </h5>
@@ -355,6 +355,21 @@
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Aktualizacja tekstu podpowiedzi w czasie rzeczywistym
+        filtersCollapse.addEventListener('shown.bs.collapse', function () {
+            const hintText = document.querySelector('.opacity-75');
+            if (hintText) {
+                hintText.textContent = '(kliknij, aby zwinąć)';
+            }
+        });
+
+        filtersCollapse.addEventListener('hidden.bs.collapse', function () {
+            const hintText = document.querySelector('.opacity-75');
+            if (hintText) {
+                hintText.textContent = '(kliknij, aby rozwinąć)';
+            }
         });
     });
 </script>
