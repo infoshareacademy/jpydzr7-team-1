@@ -430,8 +430,6 @@ class JoinRequestForm(forms.Form):
     )
 
 
-
-
 class AddTransaction(forms.ModelForm):
     TYPY_TRANSAKCJI = [
         ('one off', 'jednorazowa'),
@@ -450,7 +448,12 @@ class AddTransaction(forms.ModelForm):
         user = kwargs.pop('user')  # pobieramy usera z widoku
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
-        self.fields['id_user'].queryset = User.objects.filter(family=user.family)
+        family = getattr(user, 'family', None)
+        if family:
+            self.fields['id_user'].queryset = User.objects.filter(family=family)
+        else:
+            self.fields['id_user'].queryset = User.objects.filter(pk=user.pk)
+        self.fields['id_user'].initial = user.pk
         self.fields['income'].required = True
         self.fields['expense'].required = True
         self.fields['category'].queryset = Categories.objects.filter(
@@ -467,6 +470,19 @@ class AddTransaction(forms.ModelForm):
             self.fields['income'].widget = forms.HiddenInput()
             self.fields['income'].required = False
             self.fields['expense'].required = True
+
+    def clean_income(self):
+        income = self.cleaned_data.get('income')
+        if income is not None:
+            return abs(income)
+        return income
+
+    def clean_expense(self):
+        expense = self.cleaned_data.get('expense')
+        if expense is not None:
+            return abs(expense)
+        return expense
+
     class Meta:
         model = DataTransaction
         fields = ['id_user','transaction_date', 'income', 'expense', 'category', 'description', 'transaction_type']
@@ -488,15 +504,27 @@ class AddTransaction(forms.ModelForm):
 
         }
 
-
 class AddCategory(forms.ModelForm):
 #TODO: dodajmy walidację na dublowanie kategorii
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)  # pobieramy usera z widoku
+    def __init__(self, *args, **kwargs):# pobieramy usera z widoku
+        self.user = kwargs.pop('user', None)
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
 
+    def clean_category_name(self):
+        category_name = self.cleaned_data['category_name']
+        family = self.user.family
+        # Sprawdzamy, czy kategoria o takiej nazwie już istnieje dla danego użytkownika
+        qs = Categories.objects.filter(category_name__iexact=category_name, user_id__family=family)
+
+        # Jeśli edycja, to wykluczamy obecną instancję
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise ValidationError("Ta kategoria już istnieje w Twojej rodzinie.")
+        return category_name
 
 
     class Meta:
@@ -509,3 +537,4 @@ class AddCategory(forms.ModelForm):
         'category_name': 'Nazwa kategorii'
 
         }
+
