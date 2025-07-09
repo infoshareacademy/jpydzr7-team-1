@@ -2,14 +2,15 @@
 
 {% block title %}Filtrowane transakcje użytkownika{% endblock %}
 
-{% block header_title %}Transakcje użytkownika {{ user.name }} {{ user.surname }}{% endblock %}
+{% block header_title %}Transakcje użytkownika <strong>{{ user.name|title }} {{ user.surname|title }}</strong>{% endblock %}
 
 {% block content %}
 <!-- Zaawansowane filtry -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div aria-controls="filtersCollapse" aria-expanded="false"
+            <div aria-controls="filtersCollapse"
+                 aria-expanded="{% if selected_category or date_from or date_to %}true{% else %}false{% endif %}"
                  class="card-header bg-light"
                  data-bs-target="#filtersCollapse"
                  data-bs-toggle="collapse"
@@ -19,10 +20,10 @@
                         <i class="bi bi-funnel me-2"></i>Zaawansowane filtry użytkownika
                         <small class="ms-2 opacity-75">(kliknij, aby rozwinąć)</small>
                     </span>
-                    <i class="bi bi-chevron-down transition-all" id="chevronIcon"></i>
+                    <i class="bi bi-chevron-down transition-all {% if selected_category or date_from or date_to %}rotate-180{% endif %}" id="chevronIcon"></i>
                 </h5>
             </div>
-            <div class="collapse" id="filtersCollapse">
+            <div class="collapse {% if selected_category or date_from or date_to %}show{% endif %}" id="filtersCollapse">
                 <div class="card-body">
                     <!-- Filtry kategorii -->
                     <div class="mb-3">
@@ -42,7 +43,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <!-- Filtry dat -->
                     <div class="mb-3">
                         <h6 class="text-muted mb-2">
@@ -53,19 +53,16 @@
                             {% if selected_category %}
                             <input name="category" type="hidden" value="{{ selected_category }}">
                             {% endif %}
-
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap" for="date_from">Od:</label>
                                 <input class="form-control form-control-sm" id="date_from" name="date_from" style="width: 150px;"
                                        type="date" value="{{ date_from }}">
                             </div>
-
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap" for="date_to">Do:</label>
                                 <input class="form-control form-control-sm" id="date_to" name="date_to" style="width: 150px;"
                                        type="date" value="{{ date_to }}">
                             </div>
-
                             <div class="btn-group" role="group">
                                 <button class="btn btn-primary btn-sm" type="submit">
                                     <i class="bi bi-search me-1"></i>Filtruj
@@ -303,53 +300,53 @@
     </div>
 </div>
 {% endif %}
-
+{% endblock %}
+{% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Obsługa zwijania/rozwijania filtrów
+        // Ustawienie daty dla pola 'do' na aktualną
+        const dateToInput = document.getElementById('date_to');
+        if (dateToInput && !dateToInput.value) {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            dateToInput.value = formattedDate;
+        }
+
+        // Obsługa animacji chevron przy zwijaniu/rozwijaniu filtrów
         const filtersCollapse = document.getElementById('filtersCollapse');
         const chevronIcon = document.getElementById('chevronIcon');
 
         if (filtersCollapse && chevronIcon) {
             filtersCollapse.addEventListener('show.bs.collapse', function () {
-                chevronIcon.style.transform = 'rotate(180deg)';
+                chevronIcon.classList.add('rotate-180');
             });
 
             filtersCollapse.addEventListener('hide.bs.collapse', function () {
-                chevronIcon.style.transform = 'rotate(0deg)';
+                chevronIcon.classList.remove('rotate-180');
             });
         }
 
-        // Automatyczne rozwinięcie filtrów jeśli są aktywne
-        const hasActiveFilters = {
-        {
-            selected_category | yesno
-        :
-            "true,false"
-        }
-    } ||
-        {
-            {
-                date_from | yesno
-            :
-                "true,false"
-            }
-        }
-    ||
-        {
-            {
-                date_to | yesno
-            :
-                "true,false"
-            }
-        }
+        // Tooltip dla przycisków filtrów
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
 
-        if (hasActiveFilters && filtersCollapse) {
-            const collapse = new bootstrap.Collapse(filtersCollapse, {
-                show: true
-            });
-        }
+        // Aktualizacja tekstu podpowiedzi w czasie rzeczywistym
+        filtersCollapse.addEventListener('shown.bs.collapse', function () {
+            const hintText = document.querySelector('.opacity-75');
+            if (hintText) {
+                hintText.textContent = '(kliknij, aby zwinąć)';
+            }
+        });
+
+        filtersCollapse.addEventListener('hidden.bs.collapse', function () {
+            const hintText = document.querySelector('.opacity-75');
+            if (hintText) {
+                hintText.textContent = '(kliknij, aby rozwinąć)';
+            }
+        });
     });
 </script>
 
@@ -358,19 +355,9 @@
         transition: transform 0.3s ease;
     }
 
-    .badge {
-        font-size: 0.8em;
-    }
-
-    .table th {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    .sort-icons a:hover {
-        text-decoration: none !important;
-        color: white !important;
+    .rotate-180 {
+        transform: rotate(180deg);
     }
 </style>
+
 {% endblock %}
