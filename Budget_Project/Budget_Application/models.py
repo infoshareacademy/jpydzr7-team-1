@@ -6,7 +6,8 @@ from datetime import timedelta
 import random
 import string
 from django.conf import settings
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class DataTransaction(models.Model):
@@ -248,3 +249,35 @@ class Categories(models.Model):
 
     def __str__(self):
         return self.category_name
+
+@receiver(post_save, sender=User)
+def create_default_categories_for_user(sender, instance, created, **kwargs):
+    if created:
+        default_categories = [
+            # Przychody (income)
+            ('Wynagrodzenie', 'income'),
+            ('Prezenty', 'income'),
+            ('Zwrot podatku', 'income'),
+            ('Dochód pasywny', 'income'),
+            ('Inne przychody', 'income'),
+
+            # Wydatki (expense)
+            ('Zakupy', 'expense'),
+            ('Transport', 'expense'),
+            ('Czynsz', 'expense'),
+            ('Media', 'expense'),
+            ('Abonamenty', 'expense'),
+            ('Zdrowie', 'expense'),
+            ('Edukacja', 'expense'),
+            ('Rozrywka', 'expense'),
+            ('Restauracje', 'expense'),
+            ('Podróże', 'expense'),
+            ('Inne wydatki', 'expense'),
+        ]
+
+        for name, type_ in default_categories:
+            Categories.objects.get_or_create(
+                category_name=name,
+                category_type=type_,
+                user_id=instance
+            )

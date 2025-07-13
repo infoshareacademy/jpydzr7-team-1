@@ -611,7 +611,7 @@ def add_category(request, type):
     edit_form = None
 
     # domyślnie: formularz dodawania
-    form = AddCategory(user=request.user, form_type=type)
+    form = AddCategory(request.POST or None, user=request.user, form_type=type)
 
     if request.method == 'POST':
 
