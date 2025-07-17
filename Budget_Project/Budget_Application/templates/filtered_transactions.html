@@ -201,15 +201,15 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary edit-btn"
+                        <button class="btn btn-sm btn-outline-primary edit-btn px-2 py-1"
                                 data-transaction-id="{{ transaction.transaction_id }}"
                                 data-date="{{ transaction.transaction_date|date:'Y-m-d' }}"
-                                data-amount="{% if transaction.income %}{{ transaction.income }}{% else %}{{ transaction.expense }}{% endif %}"
+                                data-amount="{% if transaction.income %}{{ transaction.income|floatformat:2 }}{% else %}{{ transaction.expense|floatformat:2 }}{% endif %}"
                                 data-type="{% if transaction.income %}income{% else %}expense{% endif %}"
                                 data-description="{{ transaction.description|default:'' }}"
                                 data-category="{{ transaction.category|default:'' }}"
                                 style="display: none;">
-                            <i class="bi bi-pencil"></i>
+                            <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
                         </button>
                     </td>
                 </tr>
@@ -248,7 +248,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="editAmount" class="form-label">Kwota</label>
-                        <input type="number" class="form-control" id="editAmount" name="amount" step="0.01" min="0" required>
+                    <input type="number" class="form-control" id="editAmount" name="amount" step="0.01" min="0.01" required>
                     </div>
                     <div class="mb-3">
                         <label for="editType" class="form-label">Typ transakcji</label>
@@ -276,7 +276,7 @@
                         <i class="bi bi-x-circle me-1"></i>Anuluj
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle me-1"></i>Zapisz zmiany
+                        <i class="bi bi-check-circle me-1"></i>Zapisz
                     </button>
                 </div>
             </form>
@@ -322,7 +322,7 @@
             });
         });
 
-        // Obsługa kliknięcia przycisku edycji
+        // Obsługa kliknięcia przycisku edycji transakcji
         const editButtons = document.querySelectorAll('.edit-btn');
         const editModal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
         const editForm = document.getElementById('editTransactionForm');
@@ -338,7 +338,7 @@
 
                 // Wypełnij formularz danymi
                 document.getElementById('editDate').value = date;
-                document.getElementById('editAmount').value = amount;
+                document.getElementById('editAmount').value = parseFloat(amount).toFixed(2);
                 document.getElementById('editType').value = type;
                 document.getElementById('editDescription').value = description;
                 document.getElementById('editCategory').value = category;
@@ -367,10 +367,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Ukryj modal
                     editModal.hide();
-
-                    // Odśwież stronę lub zaktualizuj wiersz
                     location.reload();
                 } else {
                     alert('Wystąpił błąd podczas zapisywania: ' + (data.error || 'Nieznany błąd'));
@@ -381,8 +378,6 @@
                 alert('Wystąpił błąd podczas zapisywania transakcji');
             });
         });
-
-        // Reszta istniejącego kodu...
     });
 </script>
 
@@ -398,6 +393,10 @@
     .edit-btn {
         opacity: 0.7;
         transition: opacity 0.2s ease;
+        min-width: 30px !important;
+        height: 30px !important;
+        padding: 2px 4px !important;
+        line-height: 1.2;
     }
 
     .edit-btn:hover {
@@ -408,8 +407,11 @@
         transition: transform 0.3s ease;
     }
 
-    .rotate-180 {
-        transform: rotate(180deg);
+    .transaction-row td {
+        vertical-align: middle;
+        padding: 0.75rem 0.5rem;
+        line-height: 1.4;
     }
+
 </style>
 {% endblock %}
