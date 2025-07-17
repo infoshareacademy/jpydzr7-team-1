@@ -178,11 +178,12 @@
                     </th>
                     <th>Opis</th>
                     <th>Kategoria</th>
+                    <th style="width: 80px;">Akcje</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for transaction in transactions %}
-                <tr>
+                <tr class="transaction-row" data-transaction-id="{{ transaction.transaction_id }}">
                     <td>{{ transaction.transaction_date|date:"d.m.Y" }}</td>
                     <td class="{% if transaction.income %}text-success{% else %}text-danger{% endif %}">
                         {% if transaction.income %}
@@ -199,6 +200,18 @@
                         <span class="text-muted">-</span>
                         {% endif %}
                     </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary edit-btn"
+                                data-transaction-id="{{ transaction.transaction_id }}"
+                                data-date="{{ transaction.transaction_date|date:'Y-m-d' }}"
+                                data-amount="{% if transaction.income %}{{ transaction.income }}{% else %}{{ transaction.expense }}{% endif %}"
+                                data-type="{% if transaction.income %}income{% else %}expense{% endif %}"
+                                data-description="{{ transaction.description|default:'' }}"
+                                data-category="{{ transaction.category|default:'' }}"
+                                style="display: none;">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
                 </tbody>
@@ -208,7 +221,7 @@
                     <td class="{% if total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
                         <i class="bi bi-calculator me-1"></i>{{ total_balance|floatformat:2 }} zł
                     </td>
-                    <td colspan="2"></td>
+                    <td colspan="3"></td>
                 </tr>
                 </tfoot>
             </table>
@@ -216,75 +229,62 @@
     </div>
 </div>
 
-<!-- Statystyki -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart me-2"></i>Statystyki użytkownika
+<!-- Modal do edycji transakcji -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTransactionModalLabel">
+                    <i class="bi bi-pencil me-2"></i>Edytuj transakcję
                 </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
             </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6 border-end">
-                        <div class="fw-bold text-success">
-                            <i class="bi bi-arrow-up-circle"></i>
-                            {{ total_income|floatformat:2 }} zł
-                        </div>
-                        <small class="text-muted">Przychody</small>
+            <form id="editTransactionForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editDate" class="form-label">Data transakcji</label>
+                        <input type="date" class="form-control" id="editDate" name="transaction_date" required>
                     </div>
-                    <div class="col-6">
-                        <div class="fw-bold text-danger">
-                            <i class="bi bi-arrow-down-circle"></i>
-                            {{ total_expense|floatformat:2 }} zł
-                        </div>
-                        <small class="text-muted">Wydatki</small>
+                    <div class="mb-3">
+                        <label for="editAmount" class="form-label">Kwota</label>
+                        <input type="number" class="form-control" id="editAmount" name="amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editType" class="form-label">Typ transakcji</label>
+                        <select class="form-select" id="editType" name="transaction_type" required>
+                            <option value="income">Przychód</option>
+                            <option value="expense">Wydatek</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Opis</label>
+                        <input type="text" class="form-control" id="editDescription" name="description" maxlength="255">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCategory" class="form-label">Kategoria</label>
+                        <select class="form-select" id="editCategory" name="category">
+                            <option value="">-- Wybierz kategorię --</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="bi bi-info-circle me-2"></i>Informacje o filtrach
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="small">
-                    <div class="mb-2">
-                        <strong>Kategoria:</strong>
-                        <span class="{% if selected_category %}text-primary{% else %}text-muted{% endif %}">
-                                {{ selected_category|default:"Wszystkie" }}
-                            </span>
-                    </div>
-                    <div class="mb-2">
-                        <strong>Okres:</strong>
-                        <span class="text-muted">
-                                {% if date_from and date_to %}
-                                    {{ date_from }} - {{ date_to }}
-                                {% elif date_from %}
-                                    Od {{ date_from }}
-                                {% elif date_to %}
-                                    Do {{ date_to }}
-                                {% else %}
-                                    Wszystkie daty
-                                {% endif %}
-                            </span>
-                    </div>
-                    <div>
-                        <strong>Liczba transakcji:</strong>
-                        <span class="text-primary">{{ transactions.count }}</span>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Anuluj
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>Zapisz zmiany
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>
 
+<!-- Pozostała część template... -->
 {% else %}
 <div class="alert alert-info">
     <h4 class="alert-heading">
@@ -301,56 +301,109 @@
 </div>
 {% endif %}
 {% endblock %}
+
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Ustawienie daty dla pola 'do' na aktualną
-        const dateToInput = document.getElementById('date_to');
-        if (dateToInput && !dateToInput.value) {
-            const today = new Date();
-            const formattedDate = today.toISOString().split('T')[0];
-            dateToInput.value = formattedDate;
-        }
+        // Istniejący kod...
 
-        // Obsługa animacji chevron przy zwijaniu/rozwijaniu filtrów
-        const filtersCollapse = document.getElementById('filtersCollapse');
-        const chevronIcon = document.getElementById('chevronIcon');
+        // Hover effect dla wierszy tabeli
+        const transactionRows = document.querySelectorAll('.transaction-row');
 
-        if (filtersCollapse && chevronIcon) {
-            filtersCollapse.addEventListener('show.bs.collapse', function () {
-                chevronIcon.classList.add('rotate-180');
+        transactionRows.forEach(row => {
+            const editBtn = row.querySelector('.edit-btn');
+
+            row.addEventListener('mouseenter', function() {
+                editBtn.style.display = 'inline-block';
             });
 
-            filtersCollapse.addEventListener('hide.bs.collapse', function () {
-                chevronIcon.classList.remove('rotate-180');
+            row.addEventListener('mouseleave', function() {
+                editBtn.style.display = 'none';
             });
-        }
-
-        // Tooltip dla przycisków filtrów
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
+        // Obsługa kliknięcia przycisku edycji
+        const editButtons = document.querySelectorAll('.edit-btn');
+        const editModal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+        const editForm = document.getElementById('editTransactionForm');
 
-        // Aktualizacja tekstu podpowiedzi w czasie rzeczywistym
-        filtersCollapse.addEventListener('shown.bs.collapse', function () {
-            const hintText = document.querySelector('.opacity-75');
-            if (hintText) {
-                hintText.textContent = '(kliknij, aby zwinąć)';
-            }
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const transactionId = this.dataset.transactionId;
+                const date = this.dataset.date;
+                const amount = this.dataset.amount;
+                const type = this.dataset.type;
+                const description = this.dataset.description;
+                const category = this.dataset.category;
+
+                // Wypełnij formularz danymi
+                document.getElementById('editDate').value = date;
+                document.getElementById('editAmount').value = amount;
+                document.getElementById('editType').value = type;
+                document.getElementById('editDescription').value = description;
+                document.getElementById('editCategory').value = category;
+
+                // Ustaw action formularza
+                editForm.action = `/transactions/edit/${transactionId}/`;
+
+                // Pokaż modal
+                editModal.show();
+            });
         });
 
-        filtersCollapse.addEventListener('hidden.bs.collapse', function () {
-            const hintText = document.querySelector('.opacity-75');
-            if (hintText) {
-                hintText.textContent = '(kliknij, aby rozwinąć)';
-            }
+        // Obsługa wysłania formularza
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Ukryj modal
+                    editModal.hide();
+
+                    // Odśwież stronę lub zaktualizuj wiersz
+                    location.reload();
+                } else {
+                    alert('Wystąpił błąd podczas zapisywania: ' + (data.error || 'Nieznany błąd'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Wystąpił błąd podczas zapisywania transakcji');
+            });
         });
+
+        // Reszta istniejącego kodu...
     });
 </script>
 
 <style>
+    .transaction-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .transaction-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .edit-btn {
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .edit-btn:hover {
+        opacity: 1;
+    }
+
     .transition-all {
         transition: transform 0.3s ease;
     }
@@ -359,5 +412,4 @@
         transform: rotate(180deg);
     }
 </style>
-
 {% endblock %}

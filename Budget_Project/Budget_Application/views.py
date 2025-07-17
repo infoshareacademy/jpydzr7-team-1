@@ -11,9 +11,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 # Python standard library imports
 from datetime import datetime
+import json
 
 # Local imports
 from .forms import (
@@ -232,6 +235,65 @@ def filtered_family_transactions(request):
     }
 
     return render(request, 'filtered_family_transactions.html', context)
+
+
+@require_http_methods(["POST"])
+def edit_transaction(request, transaction_id):
+    try:
+        # Pobierz transakcję
+        transaction = DataTransaction.objects.get(
+            transaction_id=transaction_id,
+            id_user=request.user
+        )
+
+        # Pobierz dane z formularza
+        transaction_date = request.POST.get('transaction_date')
+        amount_str = request.POST.get('amount')
+        transaction_type = request.POST.get('transaction_type')
+        description = request.POST.get('description', '')
+        category_name = request.POST.get('category', '')
+
+        # Walidacja i konwersja kwoty
+        if not amount_str or amount_str.strip() == '':
+            return JsonResponse({'success': False, 'error': 'Kwota jest wymagana!'})
+        try:
+            amount = float(amount_str.replace(',', '.'))
+            if amount <= 0:
+                return JsonResponse({'success': False, 'error': 'Jeśli chcesz dodać wydatek, zrób to z poziomu "Typ transakcji".'})
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'Nieprawidłowa kwota!'})
+
+        # Pobierz obiekt kategorii
+        category_obj = None
+        if category_name:
+            try:
+                category_obj = Categories.objects.get(
+                    category_name=category_name,
+                    user_id__family=request.user.family
+                )
+            except Categories.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Wybrana kategoria nie istnieje'})
+
+        # Aktualizuj transakcję
+        transaction.transaction_date = transaction_date
+        transaction.description = description
+        transaction.category = category_obj
+        transaction.transaction_type = transaction_type
+
+        # Ustaw kwoty na podstawie typu
+        if transaction_type == 'income':
+            transaction.income = amount
+            transaction.expense = None
+        else:
+            transaction.expense = amount
+            transaction.income = None
+
+        transaction.save()
+        return JsonResponse({'success': True})
+    except DataTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transakcja nie została znaleziona'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Wystąpił nieznany błąd: {str(e)}'})
 
 
 # ---------USERS---LOGIN---REGISTRATION------->
