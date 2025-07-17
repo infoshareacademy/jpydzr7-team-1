@@ -4,6 +4,7 @@ from django.contrib.auth import views as auth_views
 from .views import (
     MyPasswordResetView,
     filtered_transactions,
+    dashboard
 )
 
 urlpatterns = [
@@ -55,4 +56,8 @@ urlpatterns = [
     path("add_transaction/<str:type>", views.add_transaction, name="add_transaction"),
     # ==================== DODANIE KATEGORII ====================
     path("add_category/<str:type>", views.add_category, name="add_category"),
+
+    # ==================== DODANIE DASHBOARD ====================
+    path("dashboard/", views.dashboard, name="dashboard"),
+
 ]

@@ -10,12 +10,21 @@
 <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
   <ul class="navbar-nav gap-2">
     {% if user.is_authenticated %}
+    <li class="nav-item">
+        {% if request.resolver_match.url_name == 'dashboard' %}
+          <span class="btn btn-outline-primary disabled">Dashboard</span>
+        {% else %}
+          <a class="btn btn-outline-primary" href="{% url 'dashboard' %}">Dashboard</a>
+        {% endif %}
+      </li>
+
       <li class="nav-item">
         {% if request.resolver_match.url_name == 'user_detail' %}
           <span class="btn btn-outline-primary disabled">Moje konto</span>
         {% else %}
           <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
         {% endif %}
+      </li>
     <li class="nav-item">
       {% if request.resolver_match.url_name == 'filtered-transactions' %}
         <span class="btn btn-outline-primary disabled">Wszystkie transakcje</span>

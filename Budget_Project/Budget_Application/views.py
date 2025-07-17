@@ -661,3 +661,48 @@ def add_category(request, type):
         'form_type': type,
         'edit_id': int(edit_id) if edit_id else None,
     })
+
+
+from django.db.models import Sum
+from django.shortcuts import render
+from .models import DataTransaction
+from datetime import datetime
+
+from django.shortcuts import render
+from django.db.models import Sum
+
+from django.shortcuts import render
+from django.db.models import Sum
+from .models import DataTransaction, Categories, User
+
+def dashboard(request):
+    user = request.user
+
+    # Pobranie transakcji – dla rodziny lub tylko dla siebie
+    if user.family:
+        members = User.objects.filter(family=user.family)
+        qs = DataTransaction.objects.filter(id_user__in=members)
+    else:
+        qs = DataTransaction.objects.filter(id_user=user)
+
+    # Filtr czasowy
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date:
+        qs = qs.filter(transaction_date__gte=start_date)
+    if end_date:
+        qs = qs.filter(transaction_date__lte=end_date)
+
+    # Agregacja wydatków
+    expense_data = qs.filter(expense__isnull=False).values('category__category_name').annotate(total=Sum('expense'))
+    income_data = qs.filter(income__isnull=False).values('category__category_name').annotate(total=Sum('income'))
+
+    context = {
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+        'expense_labels': [e['category__category_name'] for e in expense_data],
+        'expense_values': [e['total'] for e in expense_data],
+        'income_labels': [i['category__category_name'] for i in income_data],
+        'income_values': [i['total'] for i in income_data],
+    }
+    return render(request, 'dashboard.html', context)
