@@ -208,7 +208,10 @@
                                 data-type="{% if transaction.income %}income{% else %}expense{% endif %}"
                                 data-description="{{ transaction.description|default:'' }}"
                                 data-category="{{ transaction.category|default:'' }}"
-                                style="display: none;">
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="Kliknij, aby edytować dane transakcji"
+                                style="display: none; min-width: 30px; height: 30px;">
                             <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
                         </button>
                     </td>
@@ -305,7 +308,11 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Istniejący kod...
+        // Inicjalizacja tooltipów Bootstrap
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
         // Hover effect dla wierszy tabeli
         const transactionRows = document.querySelectorAll('.transaction-row');
@@ -315,10 +322,14 @@
 
             row.addEventListener('mouseenter', function() {
                 editBtn.style.display = 'inline-block';
+                // Dodanie klasy dla dodatkowych efektów hover
+                this.classList.add('hovered');
             });
 
             row.addEventListener('mouseleave', function() {
                 editBtn.style.display = 'none';
+                // Usunięcie klasy hover
+                this.classList.remove('hovered');
             });
         });
 
@@ -383,11 +394,34 @@
 
 <style>
     .transaction-row {
-        transition: background-color 0.2s ease;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
     }
 
     .transaction-row:hover {
         background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 10;
+        margin-left: -15px;
+        margin-right: -15px;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .transaction-row:hover td {
+        font-weight: 600;
+    }
+
+    .transaction-row:hover td:first-child {
+        padding-left: 0.5rem;
+    }
+
+    .transaction-row:hover td:last-child {
+        padding-right: 0.5rem;
     }
 
     .edit-btn {
@@ -411,7 +445,29 @@
         vertical-align: middle;
         padding: 0.75rem 0.5rem;
         line-height: 1.4;
+        transition: font-weight 0.3s ease;
     }
+
+    .table-hover tbody tr:hover {
+        background-color: transparent !important;
+    }
+
+    .transaction-row:hover .badge {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .transaction-row:hover .btn {
+        transform: scale(1.05);
+    }
+
+    .table-responsive {
+        overflow: visible;
+    }
+
+    .card-body {
+        overflow: visible;
+    }
+
 
 </style>
 {% endblock %}
