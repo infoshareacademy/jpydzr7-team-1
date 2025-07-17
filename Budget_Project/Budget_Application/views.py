@@ -296,19 +296,19 @@ def custom_login_view(request):
 
 
 
-@login_required
-def dashboard(request):
-    show_welcome = False
-    if not request.session.get('welcome_shown', False):
-        show_welcome = True
-        request.session['welcome_shown'] = True
-
-    user_role = request.user.role
-
-    return render(request, 'users_test/dashboard.html', {
-        'show_welcome': show_welcome,
-        'role': user_role
-    })
+# @login_required
+# def dashboard(request):
+#     show_welcome = False
+#     if not request.session.get('welcome_shown', False):
+#         show_welcome = True
+#         request.session['welcome_shown'] = True
+#
+#     user_role = request.user.role
+#
+#     return render(request, 'users_test/dashboard.html', {
+#         'show_welcome': show_welcome,
+#         'role': user_role
+#     })
 
 
 def logout_view(request):

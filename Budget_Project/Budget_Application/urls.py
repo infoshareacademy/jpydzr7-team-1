@@ -57,7 +57,5 @@ urlpatterns = [
     # ==================== DODANIE KATEGORII ====================
     path("add_category/<str:type>", views.add_category, name="add_category"),
 
-    # ==================== DODANIE DASHBOARD ====================
-    path("dashboard/", views.dashboard, name="dashboard"),
 
 ]
