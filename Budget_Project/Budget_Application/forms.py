@@ -485,7 +485,7 @@ class AddTransaction(forms.ModelForm):
 
     class Meta:
         model = DataTransaction
-        fields = ['id_user','transaction_date', 'income', 'expense', 'category', 'description', 'transaction_type']
+        fields = ['category', 'id_user','transaction_date', 'income', 'expense', 'description', 'transaction_type']
         widgets = {
             'transaction_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'income': forms.NumberInput(attrs={'class': 'form-control'}),
