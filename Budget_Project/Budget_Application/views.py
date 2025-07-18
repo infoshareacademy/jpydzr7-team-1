@@ -719,4 +719,5 @@ def currency_converter(request):
         'amount': amount,
         'from_currency': from_currency,
         'to_currency': to_currency,
+        'hide_sidebar': True
     })
