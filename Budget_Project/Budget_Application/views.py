@@ -674,6 +674,9 @@ from django.db.models import Sum
 from django.shortcuts import render
 from django.db.models import Sum
 from .models import DataTransaction, Categories, User
+from collections import defaultdict
+from django.db.models import Sum
+import json
 
 def dashboard(request):
     user = request.user
@@ -693,9 +696,21 @@ def dashboard(request):
     if end_date:
         qs = qs.filter(transaction_date__lte=end_date)
 
-    # Agregacja wydatków
+    # Agregacja wydatków i przychodów po kategorii
     expense_data = qs.filter(expense__isnull=False).values('category__category_name').annotate(total=Sum('expense'))
     income_data = qs.filter(income__isnull=False).values('category__category_name').annotate(total=Sum('income'))
+
+    # 📈 Agregacja przychodów i wydatków po dacie (do wykresu liniowego)
+    timeline_data = defaultdict(lambda: {'income': 0, 'expense': 0})
+    for t in qs:
+        date = t.transaction_date.strftime('%Y-%m-%d')
+        timeline_data[date]['income'] += t.income or 0
+        timeline_data[date]['expense'] += t.expense or 0
+
+    sorted_timeline = sorted(timeline_data.items())
+    timeline_dates = [d[0] for d in sorted_timeline]
+    timeline_incomes = [d[1]['income'] for d in sorted_timeline]
+    timeline_expenses = [d[1]['expense'] for d in sorted_timeline]
 
     context = {
         'start_date': start_date or '',
@@ -704,5 +719,10 @@ def dashboard(request):
         'expense_values': [e['total'] for e in expense_data],
         'income_labels': [i['category__category_name'] for i in income_data],
         'income_values': [i['total'] for i in income_data],
+        # 📤 Nowe dane dla wykresu liniowego
+        'timeline_dates': json.dumps(timeline_dates),
+        'timeline_incomes': json.dumps(timeline_incomes),
+        'timeline_expenses': json.dumps(timeline_expenses),
     }
+
     return render(request, 'dashboard.html', context)

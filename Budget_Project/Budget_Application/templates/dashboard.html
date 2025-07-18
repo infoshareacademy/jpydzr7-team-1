@@ -8,15 +8,17 @@
   <style>
 .chart-row {
   display: flex;
-  justify-content: space-around;  /* lub space-between */
-  flex-wrap: wrap;                /* pozwala zawijać na mniejszych ekranach */
-  margin-top: 20px;
+  justify-content: center;  /* lub 'flex-start' */
+  flex-wrap: wrap;
+  margin-top: 0px;
+  gap: 20px; /* Dodajemy kontrolowany odstęp między wykresami */
 }
 
 .chart-container {
-  width: 45%;
-  min-width: 300px;
-  max-width: 300px;
+  min-width: 400px;
+  max-width: 400px;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .date-filter-container {
   display: flex;
@@ -29,6 +31,9 @@
   gap: 10px;
   align-items: center;
   flex-wrap: wrap; /* Żeby wyglądało dobrze na telefonie */
+}
+.chart-title {
+  line-height: 1.2;
 }
 
   </style>
@@ -44,15 +49,19 @@
 </div>
 <div class="chart-row">
   <div class="chart-container">
-    <h3>Wydatki</h3>
+    <h3 class="chart-title">Wydatki</h3>
     <canvas id="expenseChart"></canvas>
   </div>
+
   <div class="chart-container">
-    <h3>Przychody</h3>
+    <h3 class="chart-title">Przychody</h3>
     <canvas id="incomeChart"></canvas>
   </div>
 </div>
-
+<div class="container mt-5">
+  <h3 class="text-center">Przychody i Wydatki w czasie</h3>
+  <canvas id="timelineChart" height="100"></canvas>
+</div>
   <script>
     // Dane do wydatków (expense)
     const expenseLabels = {{ expense_labels|safe }};
@@ -115,6 +124,58 @@
         }
       }
     });
+        // Dane do wykresu liniowego
+    const timelineLabels = {{ timeline_dates|safe }};
+    const timelineIncome = {{ timeline_incomes|safe }};
+    const timelineExpense = {{ timeline_expenses|safe }};
+
+    // Wykres liniowy przychody vs wydatki w czasie
+    const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+    const timelineChart = new Chart(ctxTimeline, {
+      type: 'line',
+      data: {
+        labels: timelineLabels,
+        datasets: [
+          {
+            label: 'Przychody',
+            data: timelineIncome,
+            borderColor: 'green',
+            backgroundColor: 'rgba(0,255,0,0.1)',
+            tension: 0.3
+          },
+          {
+            label: 'Wydatki',
+            data: timelineExpense,
+            borderColor: 'red',
+            backgroundColor: 'rgba(255,0,0,0.1)',
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Kwota (PLN)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Data'
+            }
+          }
+        }
+      }
+    });
+
   </script>
 </body>
 </html>
