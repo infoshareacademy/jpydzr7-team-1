@@ -308,43 +308,43 @@ def create_default_categories_for_user(sender, instance, created, **kwargs):
                 user_id=instance
             )
 
-    @receiver(post_save, sender=User)
-    def generate_sample_transactions_for_user(sender, instance, created, **kwargs):
-        if not created:
-            return  # Nie generujemy danych dla istniejących użytkowników
-
-        income_categories = list(Categories.objects.filter(user_id=instance, category_type='income'))
-        expense_categories = list(Categories.objects.filter(user_id=instance, category_type='expense'))
-
-        start_date = date(2025, 6, 1)
-        end_date = date(2025, 7, 19)
-        current_date = start_date
-
-        while current_date <= end_date:
-            for _ in range(random.randint(1, 3)):
-                category = random.choice(income_categories)
-                amount = round(random.uniform(10, 500), 2)
-                DataTransaction.objects.create(
-                    id_user=instance,
-                    transaction_date=current_date,
-                    income=amount,
-                    expense=None,
-                    description=f"{category.category_name} - przychód",
-                    category=category,
-                    transaction_type='income'
-                )
-
-            for _ in range(random.randint(1, 2)):
-                category = random.choice(expense_categories)
-                amount = round(random.uniform(10, 1000), 2)
-                DataTransaction.objects.create(
-                    id_user=instance,
-                    transaction_date=current_date,
-                    income=None,
-                    expense=amount,
-                    description=f"{category.category_name} - wydatek",
-                    category=category,
-                    transaction_type='expense'
-                )
-
-            current_date += timedelta(days=1)
+    # @receiver(post_save, sender=User)
+    # def generate_sample_transactions_for_user(sender, instance, created, **kwargs):
+    #     if not created:
+    #         return  # Nie generujemy danych dla istniejących użytkowników
+    #
+    #     income_categories = list(Categories.objects.filter(user_id=instance, category_type='income'))
+    #     expense_categories = list(Categories.objects.filter(user_id=instance, category_type='expense'))
+    #
+    #     start_date = date(2025, 6, 1)
+    #     end_date = date(2025, 7, 19)
+    #     current_date = start_date
+    #
+    #     while current_date <= end_date:
+    #         for _ in range(random.randint(1, 3)):
+    #             category = random.choice(income_categories)
+    #             amount = round(random.uniform(10, 500), 2)
+    #             DataTransaction.objects.create(
+    #                 id_user=instance,
+    #                 transaction_date=current_date,
+    #                 income=amount,
+    #                 expense=None,
+    #                 description=f"{category.category_name} - przychód",
+    #                 category=category,
+    #                 transaction_type='income'
+    #             )
+    #
+    #         for _ in range(random.randint(1, 2)):
+    #             category = random.choice(expense_categories)
+    #             amount = round(random.uniform(10, 1000), 2)
+    #             DataTransaction.objects.create(
+    #                 id_user=instance,
+    #                 transaction_date=current_date,
+    #                 income=None,
+    #                 expense=amount,
+    #                 description=f"{category.category_name} - wydatek",
+    #                 category=category,
+    #                 transaction_type='expense'
+    #             )
+    #
+    #         current_date += timedelta(days=1)

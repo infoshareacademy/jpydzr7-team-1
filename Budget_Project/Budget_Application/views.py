@@ -19,6 +19,7 @@ from django.shortcuts import render
 from collections import defaultdict
 from django.db.models import Sum
 import json
+from datetime import date
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -755,7 +756,10 @@ def add_category(request, type):
         edytowana = get_object_or_404(Categories, pk=edit_id, user_id__family=request.user.family)
         edit_form = AddCategory(instance=edytowana, user=request.user, form_type=type)
 
-    kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at')
+    if hasattr(request.user, 'family') and request.user.family:
+        kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at')
+    else:
+        kategorie = Categories.objects.filter(user_id=request.user).order_by('created_at')
 
     return render(request, 'add_category.html', {
         'form': form,
@@ -911,7 +915,8 @@ def get_monthly_avg(user):
     return round(avg_income, 2), round(avg_expense, 2)
 
 
-@login_required
+
+@login_required()
 def budget_status_view(request):
     user = request.user
     is_family = False
@@ -922,34 +927,34 @@ def budget_status_view(request):
         is_family = True
         members = User.objects.filter(family=user.family)
         budget = Budget.objects.filter(user_id__in=members).first()
-
-        # Oblicz saldo rodziny: suma przychodów - suma wydatków
-        total_income = DataTransaction.objects.filter(
-            id_user__in=members, transaction_type='income'
-        ).aggregate(total=Sum('income'))['total'] or 0
-
-        total_expense = DataTransaction.objects.filter(
-            id_user__in=members, transaction_type='expense'
-        ).aggregate(total=Sum('expense'))['total'] or 0
-
-        current_balance = total_income - total_expense
-
     else:
         budget = Budget.objects.filter(user_id=user).first()
 
-        # Oblicz saldo pojedynczego użytkownika
-        total_income = DataTransaction.objects.filter(
-            id_user=user, transaction_type='income'
-        ).aggregate(total=Sum('income'))['total'] or 0
+    # 🟠 OBSŁUGA FORMULARZY (POST)
+    if request.method == 'POST':
+        action = request.POST.get('action')
 
-        total_expense = DataTransaction.objects.filter(
-            id_user=user, transaction_type='expense'
-        ).aggregate(total=Sum('expense'))['total'] or 0
+        if action == 'delete' and budget:
+            budget.delete()
+            return redirect('budget_status')  # <-- upewnij się, że masz taki URL nazwany w urls.py
 
-        current_balance = total_income - total_expense
+        elif action == 'create':
+            initial_amount = request.POST.get('initial_amount')
+            init_date = request.POST.get('budget_init_date')
 
-    # Reszta Twojej logiki (obsługa POST, member_stats itp.) pozostaje bez zmian
+            if initial_amount and init_date:
+                Budget.objects.create(
+                    user_id=user,
+                    budget_initial_amount=float(initial_amount),
+                    budget_init_date=init_date
+                )
+                return redirect('budget_status')  # odświeżenie strony po stworzeniu
 
+    # 🟢 OBLICZ SALDO
+    if budget:
+        current_balance = budget.current_amount
+
+    # 🟢 STATYSTYKI CZŁONKÓW
     member_stats = []
     if is_family:
         members = User.objects.filter(family=user.family)
@@ -965,8 +970,9 @@ def budget_status_view(request):
         'budget': budget,
         'is_family': is_family,
         'member_stats': member_stats,
-        'current_balance': current_balance,  # Przekazujemy saldo do szablonu
+        'current_balance': current_balance,
     })
+
 
 def get_supported_currencies():
     url = "https://api.frankfurter.app/currencies"
