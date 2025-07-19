@@ -250,6 +250,8 @@ class Categories(models.Model):
     def __str__(self):
         return self.category_name
 
+from django.utils import timezone
+
 class Budget(models.Model):
     budget_initial_amount = models.FloatField(blank=True, null=True)
     user_id = models.ForeignKey('User', on_delete=models.CASCADE)
@@ -263,11 +265,26 @@ class Budget(models.Model):
 
     @property
     def current_amount(self):
-        # Pobierz wszystkie transakcje użytkownika od daty budżetu
-        transactions = DataTransaction.objects.filter(
-            id_user=self.user_id,
-            transaction_date__gte=self.budget_init_date
-        )
+        # Pobierz dzisiejszą datę
+        today = timezone.now().date()
+
+        # Sprawdź, czy użytkownik należy do rodziny
+        if self.user_id.family:
+            # Jeśli tak, weź wszystkich członków rodziny
+            family_members = User.objects.filter(family=self.user_id.family)
+            # Zbierz transakcje dla wszystkich członków rodziny, do dzisiejszej daty
+            transactions = DataTransaction.objects.filter(
+                id_user__in=family_members,
+                transaction_date__gte=self.budget_init_date,
+                transaction_date__lte=today  # Tylko transakcje do dzisiejszej daty
+            )
+        else:
+            # Jeśli użytkownik nie ma rodziny, tylko jego transakcje, do dzisiejszej daty
+            transactions = DataTransaction.objects.filter(
+                id_user=self.user_id,
+                transaction_date__gte=self.budget_init_date,
+                transaction_date__lte=today  # Tylko transakcje do dzisiejszej daty
+            )
 
         # Zsumuj przychody i wydatki
         total_income = sum(t.income or 0 for t in transactions)

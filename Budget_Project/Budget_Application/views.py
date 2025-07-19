@@ -906,14 +906,18 @@ def get_monthly_avg(user):
         sum(item['month_sum'] for item in monthly_incomes) / len(monthly_incomes)
         if monthly_incomes else 0
     )
+
     # Liczymy średnią miesięczną wydatków
     avg_expense = (
         sum(item['month_sum'] for item in monthly_expenses) / len(monthly_expenses)
         if monthly_expenses else 0
     )
 
-    return round(avg_income, 2), round(avg_expense, 2)
+    # Upewniamy się, że średnie wartości są zaokrąglone
+    avg_income = round(avg_income, 2)
+    avg_expense = round(avg_expense, 2)
 
+    return avg_income, avg_expense
 
 
 @login_required()
