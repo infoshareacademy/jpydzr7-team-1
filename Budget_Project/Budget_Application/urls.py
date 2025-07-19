@@ -56,6 +56,7 @@ urlpatterns = [
     path("add_transaction/<str:type>", views.add_transaction, name="add_transaction"),
     # ==================== DODANIE KATEGORII ====================
     path("add_category/<str:type>", views.add_category, name="add_category"),
-
+    # ==================== DODANIE STANU BUDŻETU ====================
+    path("budget_status/", views.budget_status_view, name="budget_status"),
 
 ]

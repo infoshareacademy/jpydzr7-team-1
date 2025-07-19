@@ -11,7 +11,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
-
+from django.shortcuts import render
+from collections import defaultdict
+from django.db.models import Sum
+import json
 # Python standard library imports
 from datetime import datetime
 
@@ -27,7 +30,7 @@ from .forms import (
     JoinRequestForm,
     UserForm, AddTransaction, AddCategory
 )
-from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code, FamilyTransactionView, Categories
+from .models import DataTransaction, User, Family, FamilyInvitation, JoinRequest, generate_access_code, FamilyTransactionView, Categories, Budget
 from .services import UserService
 from datetime import datetime
 from django.db.models import Q
@@ -663,21 +666,9 @@ def add_category(request, type):
     })
 
 
-from django.db.models import Sum
-from django.shortcuts import render
-from .models import DataTransaction
-from datetime import datetime
 
-from django.shortcuts import render
-from django.db.models import Sum
 
-from django.shortcuts import render
-from django.db.models import Sum
-from .models import DataTransaction, Categories, User
-from collections import defaultdict
-from django.db.models import Sum
-import json
-
+@login_required
 def dashboard(request):
     user = request.user
 
@@ -726,3 +717,30 @@ def dashboard(request):
     }
 
     return render(request, 'dashboard.html', context)
+
+@login_required
+def budget_status_view(request):
+    user = request.user
+    budget = Budget.objects.filter(user_id=user).first()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'delete' and budget:
+            budget.delete()
+            return redirect('budget_status')
+
+        if not budget:
+            initial_amount = request.POST.get('initial_amount')  # <-- poprawiona nazwa
+            init_date = request.POST.get('budget_init_date')
+
+            if initial_amount and init_date:
+                Budget.objects.create(
+                    user_id=user,
+                    budget_initial_amount=initial_amount,
+                    budget_init_date=init_date
+                )
+                return redirect('budget_status')
+
+    return render(request, 'budget_status.html', {'budget': budget})
+

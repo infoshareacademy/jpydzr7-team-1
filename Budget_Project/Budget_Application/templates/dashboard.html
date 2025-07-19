@@ -6,85 +6,98 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-.chart-row {
-  display: flex;
-  justify-content: center;  /* lub 'flex-start' */
-  flex-wrap: wrap;
-  margin-top: 0px;
-  gap: 20px; /* Dodajemy kontrolowany odstęp między wykresami */
-}
+    .chart-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0px;
+      gap: 20px;
+    }
 
-.chart-container {
-  min-width: 400px;
-  max-width: 400px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-.date-filter-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
+    .chart-container {
+      min-width: 400px;
+      max-width: 400px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
 
-.date-form {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap; /* Żeby wyglądało dobrze na telefonie */
-}
-.chart-title {
-  line-height: 1.2;
-}
+    .date-filter-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
 
+    .date-form {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .chart-title {
+      line-height: 1.2;
+      margin-bottom: 10px;
+      padding-left: 30px;  /* Przesunięcie w lewo */
+    }
   </style>
 </head>
 <body>
   {% include 'navbar.html' %}
-<div class="date-filter-container">
-  <form method="get" class="date-form">
-    <label>Od: <input type="date" name="start_date" value="{{ start_date }}"></label>
-    <label>Do: <input type="date" name="end_date" value="{{ end_date }}"></label>
-    <button type="submit" class="btn btn-primary">Filtruj</button>
-  </form>
-</div>
-<div class="chart-row">
-  <div class="chart-container">
-    <h3 class="chart-title">Wydatki</h3>
-    <canvas id="expenseChart"></canvas>
+
+  <div class="date-filter-container">
+    <form method="get" class="date-form">
+      <label>Od: <input type="date" name="start_date" value="{{ start_date }}"></label>
+      <label>Do: <input type="date" name="end_date" value="{{ end_date }}"></label>
+      <button type="submit" class="btn btn-primary">Filtruj</button>
+    </form>
   </div>
 
-  <div class="chart-container">
-    <h3 class="chart-title">Przychody</h3>
-    <canvas id="incomeChart"></canvas>
+  <div class="chart-row">
+
+
+    <div class="chart-container">
+      <h3 class="chart-title">Przychody</h3>
+      <canvas id="incomeChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3 class="chart-title">Wydatki</h3>
+      <canvas id="expenseChart"></canvas>
+    </div>
+
   </div>
-</div>
-<div class="container mt-5">
-  <h3 class="text-center">Przychody i Wydatki w czasie</h3>
-  <canvas id="timelineChart" height="100"></canvas>
-</div>
+
+  <div class="container mt-5">
+    <h3 class="text-center">Przychody i Wydatki w czasie</h3>
+    <canvas id="timelineChart" height="100"></canvas>
+  </div>
+
   <script>
-    // Dane do wydatków (expense)
     const expenseLabels = {{ expense_labels|safe }};
     const expenseValues = {{ expense_values|safe }};
-
-    // Dane do przychodów (income)
     const incomeLabels = {{ income_labels|safe }};
     const incomeValues = {{ income_values|safe }};
 
-    // Konfiguracja wykresu wydatków
-    const ctxExpense = document.getElementById('expenseChart').getContext('2d');
-    const expenseChart = new Chart(ctxExpense, {
+    // Funkcja generująca losowe kolory
+    function generateColors(length) {
+      const colors = [];
+      for (let i = 0; i < length; i++) {
+        const r = Math.floor(Math.random() * 200 + 30);
+        const g = Math.floor(Math.random() * 200 + 30);
+        const b = Math.floor(Math.random() * 200 + 30);
+        colors.push(`rgba(${r}, ${g}, ${b}, 0.6)`);
+      }
+      return colors;
+    }
+
+    // Wykres wydatków
+    new Chart(document.getElementById('expenseChart').getContext('2d'), {
       type: 'pie',
       data: {
         labels: expenseLabels,
         datasets: [{
           data: expenseValues,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-          ],
+          backgroundColor: generateColors(expenseLabels.length),
           borderColor: 'rgba(255, 255, 255, 1)',
           borderWidth: 1
         }]
@@ -98,20 +111,14 @@
       }
     });
 
-    // Konfiguracja wykresu przychodów
-    const ctxIncome = document.getElementById('incomeChart').getContext('2d');
-    const incomeChart = new Chart(ctxIncome, {
+    // Wykres przychodów
+    new Chart(document.getElementById('incomeChart').getContext('2d'), {
       type: 'pie',
       data: {
         labels: incomeLabels,
         datasets: [{
           data: incomeValues,
-          backgroundColor: [
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 205, 86, 0.6)',
-            'rgba(201, 203, 207, 0.6)',
-          ],
+          backgroundColor: generateColors(incomeLabels.length),
           borderColor: 'rgba(255, 255, 255, 1)',
           borderWidth: 1
         }]
@@ -124,14 +131,14 @@
         }
       }
     });
-        // Dane do wykresu liniowego
+
+    // Dane do wykresu liniowego
     const timelineLabels = {{ timeline_dates|safe }};
     const timelineIncome = {{ timeline_incomes|safe }};
     const timelineExpense = {{ timeline_expenses|safe }};
 
-    // Wykres liniowy przychody vs wydatki w czasie
-    const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
-    const timelineChart = new Chart(ctxTimeline, {
+    // Wykres liniowy
+    new Chart(document.getElementById('timelineChart').getContext('2d'), {
       type: 'line',
       data: {
         labels: timelineLabels,
@@ -175,7 +182,6 @@
         }
       }
     });
-
   </script>
 </body>
 </html>

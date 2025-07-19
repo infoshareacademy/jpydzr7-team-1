@@ -250,6 +250,35 @@ class Categories(models.Model):
     def __str__(self):
         return self.category_name
 
+class Budget(models.Model):
+    budget_initial_amount = models.FloatField(blank=True, null=True)
+    user_id = models.ForeignKey('User', on_delete=models.CASCADE)
+    budget_init_date = models.DateField()
+
+    class Meta:
+        db_table = 'BUDGET'
+
+    def __str__(self):
+        return f"Budżet użytkownika {self.user_id} z dnia {self.budget_init_date}"
+
+    @property
+    def current_amount(self):
+        # Pobierz wszystkie transakcje użytkownika od daty budżetu
+        transactions = DataTransaction.objects.filter(
+            id_user=self.user_id,
+            transaction_date__gte=self.budget_init_date
+        )
+
+        # Zsumuj przychody i wydatki
+        total_income = sum(t.income or 0 for t in transactions)
+        total_expense = sum(t.expense or 0 for t in transactions)
+
+        # Oblicz aktualny stan budżetu i zaokrąglij do dwóch miejsc po przecinku
+        current = (self.budget_initial_amount or 0) + total_income - total_expense
+        return round(current, 2)
+
+import random
+from datetime import date, timedelta
 @receiver(post_save, sender=User)
 def create_default_categories_for_user(sender, instance, created, **kwargs):
     if created:
@@ -281,3 +310,42 @@ def create_default_categories_for_user(sender, instance, created, **kwargs):
                 category_type=type_,
                 user_id=instance
             )
+        income_categories = list(Categories.objects.filter(user_id=instance, category_type='income'))
+        expense_categories = list(Categories.objects.filter(user_id=instance, category_type='expense'))
+
+        # Zakres dat
+        start_date = date(2025, 6, 1)
+        end_date = date(2025, 7, 19)
+        current_date = start_date
+
+        while current_date <= end_date:
+            # Losowo wybierz liczbę transakcji danego dnia (1–2 przychody, 1–2 wydatki)
+            for _ in range(random.randint(1, 2)):
+                category = random.choice(income_categories)
+                amount = round(random.uniform(10, 500), 2)
+                desc = f"{category.category_name} - przychód"
+                DataTransaction.objects.create(
+                    id_user=instance,
+                    transaction_date=current_date,
+                    income=amount,
+                    expense=None,
+                    description=desc,
+                    category=category,
+                    transaction_type='income'
+                )
+
+            for _ in range(random.randint(1, 2)):
+                category = random.choice(expense_categories)
+                amount = round(random.uniform(10, 1000), 2)
+                desc = f"{category.category_name} - wydatek"
+                DataTransaction.objects.create(
+                    id_user=instance,
+                    transaction_date=current_date,
+                    income=None,
+                    expense=amount,
+                    description=desc,
+                    category=category,
+                    transaction_type='expense'
+                )
+
+            current_date += timedelta(days=1)

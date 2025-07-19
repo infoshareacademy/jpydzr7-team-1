@@ -17,14 +17,14 @@
           <a class="btn btn-outline-primary" href="{% url 'dashboard' %}">Dashboard</a>
         {% endif %}
       </li>
-
-      <li class="nav-item">
-        {% if request.resolver_match.url_name == 'user_detail' %}
-          <span class="btn btn-outline-primary disabled">Moje konto</span>
+  <li class="nav-item">
+        {% if request.resolver_match.url_name == 'budget_status' %}
+          <span class="btn btn-outline-primary disabled">Stan budżetu</span>
         {% else %}
-          <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
+          <a class="btn btn-outline-primary" href="{% url 'budget_status' %}">Stan budżetu</a>
         {% endif %}
       </li>
+
     <li class="nav-item">
       {% if request.resolver_match.url_name == 'filtered-transactions' %}
         <span class="btn btn-outline-primary disabled">Wszystkie transakcje</span>
@@ -46,6 +46,13 @@
         <a class="btn btn-outline-primary" href="{% url 'add_transaction' 'expense' %}">Dodaj wydatek</a>
       {% endif %}
     </li>
+          <li class="nav-item">
+        {% if request.resolver_match.url_name == 'user_detail' %}
+          <span class="btn btn-outline-primary disabled">Moje konto</span>
+        {% else %}
+          <a class="btn btn-outline-primary" href="{% url 'user_detail' user.login %}">Moje konto</a>
+        {% endif %}
+      </li>
         <li class="nav-item">
           <a class="btn btn-outline-danger" href="{% url 'logout' %}">Wyloguj się</a>
         </li>
