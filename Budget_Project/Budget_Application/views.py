@@ -668,30 +668,61 @@ def add_category(request, type):
 
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.db.models import Sum
+from collections import defaultdict
+from decimal import Decimal
+import json
+
+from .models import DataTransaction, Budget, User
+
+import json
+from collections import defaultdict
+from decimal import Decimal
+
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from django.shortcuts import render
+
+from .models import DataTransaction, Budget, User  # Upewnij się, że masz właściwe importy
+
+
+from collections import defaultdict
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from django.shortcuts import render
+import json
+
 @login_required
 def dashboard(request):
     user = request.user
+    budget = Budget.objects.filter(user_id=user).first()
 
-    # Pobranie transakcji – dla rodziny lub tylko dla siebie
-    if user.family:
-        members = User.objects.filter(family=user.family)
-        qs = DataTransaction.objects.filter(id_user__in=members)
-    else:
-        qs = DataTransaction.objects.filter(id_user=user)
+    if not budget:
+        return render(request, 'dashboard.html', {'message': 'Nie masz zdefiniowanego budżetu'})
 
-    # Filtr czasowy
+    initial_amount = budget.budget_initial_amount
+    budget_start_date = budget.budget_init_date
+
+    qs = DataTransaction.objects.filter(id_user=user)
+    qs = qs.filter(transaction_date__gte=budget_start_date)
+
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+
     if start_date:
-        qs = qs.filter(transaction_date__gte=start_date)
+        start_date_obj = max(start_date, str(budget_start_date))
+        qs = qs.filter(transaction_date__gte=start_date_obj)
+    else:
+        start_date = str(budget_start_date)
+
     if end_date:
         qs = qs.filter(transaction_date__lte=end_date)
 
-    # Agregacja wydatków i przychodów po kategorii
     expense_data = qs.filter(expense__isnull=False).values('category__category_name').annotate(total=Sum('expense'))
     income_data = qs.filter(income__isnull=False).values('category__category_name').annotate(total=Sum('income'))
 
-    # 📈 Agregacja przychodów i wydatków po dacie (do wykresu liniowego)
     timeline_data = defaultdict(lambda: {'income': 0, 'expense': 0})
     for t in qs:
         date = t.transaction_date.strftime('%Y-%m-%d')
@@ -703,17 +734,23 @@ def dashboard(request):
     timeline_incomes = [d[1]['income'] for d in sorted_timeline]
     timeline_expenses = [d[1]['expense'] for d in sorted_timeline]
 
+    balances = []
+    current_balance = initial_amount
+    for income, expense in zip(timeline_incomes, timeline_expenses):
+        current_balance += income - expense
+        balances.append(round(current_balance, 2))
+
     context = {
-        'start_date': start_date or '',
+        'start_date': start_date,
         'end_date': end_date or '',
         'expense_labels': [e['category__category_name'] for e in expense_data],
         'expense_values': [e['total'] for e in expense_data],
         'income_labels': [i['category__category_name'] for i in income_data],
         'income_values': [i['total'] for i in income_data],
-        # 📤 Nowe dane dla wykresu liniowego
         'timeline_dates': json.dumps(timeline_dates),
-        'timeline_incomes': json.dumps(timeline_incomes),
         'timeline_expenses': json.dumps(timeline_expenses),
+        'timeline_incomes': json.dumps(timeline_incomes),
+        'timeline_balances': json.dumps(balances),
     }
 
     return render(request, 'dashboard.html', context)
