@@ -283,14 +283,11 @@ from datetime import date, timedelta
 def create_default_categories_for_user(sender, instance, created, **kwargs):
     if created:
         default_categories = [
-            # Przychody (income)
             ('Wynagrodzenie', 'income'),
             ('Prezenty', 'income'),
             ('Zwrot podatku', 'income'),
             ('Dochód pasywny', 'income'),
             ('Inne przychody', 'income'),
-
-            # Wydatki (expense)
             ('Zakupy', 'expense'),
             ('Transport', 'expense'),
             ('Czynsz', 'expense'),
@@ -310,26 +307,29 @@ def create_default_categories_for_user(sender, instance, created, **kwargs):
                 category_type=type_,
                 user_id=instance
             )
+
+    @receiver(post_save, sender=User)
+    def generate_sample_transactions_for_user(sender, instance, created, **kwargs):
+        if not created:
+            return  # Nie generujemy danych dla istniejących użytkowników
+
         income_categories = list(Categories.objects.filter(user_id=instance, category_type='income'))
         expense_categories = list(Categories.objects.filter(user_id=instance, category_type='expense'))
 
-        # Zakres dat
         start_date = date(2025, 6, 1)
         end_date = date(2025, 7, 19)
         current_date = start_date
 
         while current_date <= end_date:
-            # Losowo wybierz liczbę transakcji danego dnia (1–2 przychody, 1–2 wydatki)
-            for _ in range(random.randint(1, 2)):
+            for _ in range(random.randint(1, 3)):
                 category = random.choice(income_categories)
                 amount = round(random.uniform(10, 500), 2)
-                desc = f"{category.category_name} - przychód"
                 DataTransaction.objects.create(
                     id_user=instance,
                     transaction_date=current_date,
                     income=amount,
                     expense=None,
-                    description=desc,
+                    description=f"{category.category_name} - przychód",
                     category=category,
                     transaction_type='income'
                 )
@@ -337,13 +337,12 @@ def create_default_categories_for_user(sender, instance, created, **kwargs):
             for _ in range(random.randint(1, 2)):
                 category = random.choice(expense_categories)
                 amount = round(random.uniform(10, 1000), 2)
-                desc = f"{category.category_name} - wydatek"
                 DataTransaction.objects.create(
                     id_user=instance,
                     transaction_date=current_date,
                     income=None,
                     expense=amount,
-                    description=desc,
+                    description=f"{category.category_name} - wydatek",
                     category=category,
                     transaction_type='expense'
                 )

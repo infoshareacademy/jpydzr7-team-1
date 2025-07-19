@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -460,6 +462,7 @@ class AddTransaction(forms.ModelForm):
             category_type=form_type,
             user_id__family=user.family
         )
+        self.fields['transaction_date'].initial = timezone.now().date().isoformat()
         self.fields['description'].required = False
         self.fields['transaction_type'].required = True
         if form_type == 'income':
@@ -505,7 +508,6 @@ class AddTransaction(forms.ModelForm):
         }
 
 class AddCategory(forms.ModelForm):
-#TODO: dodajmy walidację na dublowanie kategorii
 
     def __init__(self, *args, **kwargs):# pobieramy usera z widoku
         self.user = kwargs.pop('user', None)

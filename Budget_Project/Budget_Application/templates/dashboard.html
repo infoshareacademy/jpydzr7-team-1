@@ -3,7 +3,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Interaktywne wykresy</title>
+  <title>Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -48,13 +48,33 @@
     <div class="alert alert-warning text-center">{{ message }}</div>
   {% endif %}
 
-  <div class="date-filter-container">
-    <form method="get" class="date-form">
-      <label>Od: <input type="date" name="start_date" value="{{ start_date }}"></label>
-      <label>Do: <input type="date" name="end_date" value="{{ end_date }}"></label>
-      <button type="submit" class="btn btn-primary">Filtruj</button>
-    </form>
-  </div>
+  {% if budget_current_amount %}
+    <div class="alert alert-success text-center">
+      <strong>Stan budżetu:</strong> {{ budget_current_amount }} PLN
+    </div>
+  {% endif %}
+
+  {% if budget_start_date %}
+    <div class="date-filter-container">
+      <form method="get" class="date-form" novalidate>
+        <label>
+          Od:
+          <input type="date" name="start_date"
+                 value="{{ start_date }}"
+                 min="{{ budget_start_date }}"
+                 max="{{ end_date|default:today }}">
+        </label>
+        <label>
+          Do:
+          <input type="date" name="end_date"
+                 value="{{ end_date }}"
+                 min="{{ start_date|default:budget_start_date }}"
+                 max="{{ today }}">
+        </label>
+        <button type="submit" class="btn btn-primary">Filtruj</button>
+      </form>
+    </div>
+  {% endif %}
 
   {% if timeline_dates %}
     <div class="chart-row">
@@ -192,6 +212,26 @@
             }
           }
         }
+      }
+    });
+  }
+
+  // Dynamiczne ograniczenia w datepickerach
+  const startInput = document.querySelector('input[name="start_date"]');
+  const endInput = document.querySelector('input[name="end_date"]');
+
+  if (startInput && endInput) {
+    startInput.addEventListener('change', () => {
+      endInput.min = startInput.value || '{{ budget_start_date|default:"" }}';
+      if (endInput.value && endInput.value < endInput.min) {
+        endInput.value = endInput.min;
+      }
+    });
+
+    endInput.addEventListener('change', () => {
+      startInput.max = endInput.value || '{{ today|default:"" }}';
+      if (startInput.value && startInput.value > startInput.max) {
+        startInput.value = startInput.max;
       }
     });
   }

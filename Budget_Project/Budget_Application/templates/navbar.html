@@ -18,13 +18,17 @@
           <a class="btn btn-outline-primary" href="{% url 'dashboard' %}">Dashboard</a>
         {% endif %}
       </li>
-  <li class="nav-item">
-        {% if request.resolver_match.url_name == 'budget_status' %}
-          <span class="btn btn-outline-primary disabled">Stan budżetu</span>
-        {% else %}
-          <a class="btn btn-outline-primary" href="{% url 'budget_status' %}">Stan budżetu</a>
-        {% endif %}
-      </li>
+<li class="nav-item">
+  {% if request.resolver_match.url_name == 'budget_status' %}
+    <span class="btn btn-outline-primary disabled">
+      {% if request.user.family %}Budżet rodziny{% else %}Mój budżet{% endif %}
+    </span>
+  {% else %}
+    <a class="btn btn-outline-primary" href="{% url 'budget_status' %}">
+      {% if request.user.family %}Budżet rodziny{% else %}Mój budżet{% endif %}
+    </a>
+  {% endif %}
+</li>
 
     <li class="nav-item">
       {% if request.resolver_match.url_name == 'filtered-transactions' %}

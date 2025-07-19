@@ -6,12 +6,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.views import PasswordResetView
 from django.core.mail import send_mail
+from django.db import transaction
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
-
+from datetime import timedelta
+from django.utils import timezone
 from django.shortcuts import render
 from collections import defaultdict
 from django.db.models import Sum
@@ -574,6 +577,37 @@ def join_family_view(request):
                 elif invitation.family.family_name != family_name:
                     messages.error(request, "Nazwa rodziny nie zgadza się z zaproszeniem.")
                 else:
+                    user = request.user
+
+                    # 🔁 Transakcja atomowa
+                    with transaction.atomic():
+                        # 🔁 Przenieś środki z budżetu jako przychód
+                        old_budget = Budget.objects.filter(user_id=user).first()
+
+                        if old_budget and old_budget.budget_initial_amount > 0:
+                            # Utwórz lub znajdź kategorię
+                            category, _ = Categories.objects.get_or_create(
+                                category_name='Kapitał początkowy',
+                                category_type='income',
+                                user_id=user
+                            )
+
+                            DataTransaction.objects.create(
+                                id_user=user,
+                                transaction_date=old_budget.budget_init_date,
+                                income=old_budget.budget_initial_amount,
+                                expense=None,
+                                description='Kapitał początkowy przy dołączeniu do rodziny',
+                                category=category,
+                                transaction_type='income'
+                            )
+
+                            # Zresetuj budżet
+                            old_budget.budget_initial_amount = 0
+                            old_budget.save()
+
+
+
                     request.user.family = invitation.family
                     request.user.save()
                     invitation.accepted = True
@@ -735,52 +769,97 @@ def add_category(request, type):
 @login_required
 def dashboard(request):
     user = request.user
-    budget = Budget.objects.filter(user_id=user).first()
+
+    # Pobierz budżet i transakcje (jak wcześniej)
+    if user.family:
+        members = User.objects.filter(family=user.family)
+        qs = DataTransaction.objects.filter(id_user__in=members)
+        budget = Budget.objects.filter(user_id__in=members).first()
+    else:
+        qs = DataTransaction.objects.filter(id_user=user)
+        budget = Budget.objects.filter(user_id=user).first()
 
     if not budget:
-        return render(request, 'dashboard.html', {'message': 'Nie masz zdefiniowanego budżetu'})
+        today = timezone.now().date()
+        return render(request, 'dashboard.html', {
+            'message': 'Nie masz zdefiniowanego budżetu',
+            'today': today.strftime('%Y-%m-%d')
+        })
 
     initial_amount = budget.budget_initial_amount
     budget_start_date = budget.budget_init_date
 
-    qs = DataTransaction.objects.filter(id_user=user)
-    qs = qs.filter(transaction_date__gte=budget_start_date)
-
+    # Pobierz parametry dat
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    if start_date:
-        start_date_obj = max(start_date, str(budget_start_date))
-        qs = qs.filter(transaction_date__gte=start_date_obj)
+    # Domyślnie ostatnie 30 dni
+    today = timezone.now().date()
+
+    if not end_date:
+        end_date = today.strftime('%Y-%m-%d')
+
+    if not start_date:
+        start_date_obj = today - timedelta(days=29)
+        # Nie mniejsza niż data startu budżetu
+        if start_date_obj < budget_start_date:
+            start_date_obj = budget_start_date
+        start_date = start_date_obj.strftime('%Y-%m-%d')
     else:
-        start_date = str(budget_start_date)
+        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if start_date_obj < budget_start_date:
+            start_date_obj = budget_start_date
+            start_date = budget_start_date.strftime('%Y-%m-%d')
 
-    if end_date:
-        qs = qs.filter(transaction_date__lte=end_date)
+    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-    expense_data = qs.filter(expense__isnull=False).values('category__category_name').annotate(total=Sum('expense'))
-    income_data = qs.filter(income__isnull=False).values('category__category_name').annotate(total=Sum('income'))
+    # Sprawdzenie błędnego zakresu dat
+    if start_date_obj > end_date_obj:
+        return render(request, 'dashboard.html', {
+            'message': 'Błędny zakres dat: data początkowa jest po dacie końcowej.',
+            'start_date': start_date,
+            'end_date': end_date,
+            'today': today.strftime('%Y-%m-%d'),
+        })
+
+    # Filtruj transakcje w pełnym zakresie od startu budżetu do końca wybranego okresu
+    qs = qs.filter(transaction_date__gte=budget_start_date, transaction_date__lte=end_date_obj)
+
+    # Oblicz saldo na dzień przed start_date
+    saldo_przed_startem = initial_amount
+    if start_date_obj > budget_start_date:
+        suma_przychodow = qs.filter(transaction_date__lt=start_date_obj).aggregate(total=Sum('income'))['total'] or 0
+        suma_wydatkow = qs.filter(transaction_date__lt=start_date_obj).aggregate(total=Sum('expense'))['total'] or 0
+        saldo_przed_startem += suma_przychodow - suma_wydatkow
+
+    # Teraz filtruj transakcje na wybrany okres (od start_date do end_date)
+    qs_filtered = qs.filter(transaction_date__gte=start_date_obj, transaction_date__lte=end_date_obj)
+
+    # Agregacja danych dla wykresów
+    expense_data = qs_filtered.filter(expense__isnull=False).values('category__category_name').annotate(total=Sum('expense'))
+    income_data = qs_filtered.filter(income__isnull=False).values('category__category_name').annotate(total=Sum('income'))
 
     timeline_data = defaultdict(lambda: {'income': 0, 'expense': 0})
-    for t in qs:
-        date = t.transaction_date.strftime('%Y-%m-%d')
-        timeline_data[date]['income'] += t.income or 0
-        timeline_data[date]['expense'] += t.expense or 0
+    for t in qs_filtered:
+        date_str = t.transaction_date.strftime('%Y-%m-%d')
+        timeline_data[date_str]['income'] += t.income or 0
+        timeline_data[date_str]['expense'] += t.expense or 0
 
     sorted_timeline = sorted(timeline_data.items())
     timeline_dates = [d[0] for d in sorted_timeline]
     timeline_incomes = [d[1]['income'] for d in sorted_timeline]
     timeline_expenses = [d[1]['expense'] for d in sorted_timeline]
 
+    # Saldo budżetu w czasie — zaczynamy od salda przed startem wybranego okresu
     balances = []
-    current_balance = initial_amount
+    current_balance = saldo_przed_startem
     for income, expense in zip(timeline_incomes, timeline_expenses):
         current_balance += income - expense
         balances.append(round(current_balance, 2))
 
     context = {
         'start_date': start_date,
-        'end_date': end_date or '',
+        'end_date': end_date,
         'expense_labels': [e['category__category_name'] for e in expense_data],
         'expense_values': [e['total'] for e in expense_data],
         'income_labels': [i['category__category_name'] for i in income_data],
@@ -789,36 +868,105 @@ def dashboard(request):
         'timeline_expenses': json.dumps(timeline_expenses),
         'timeline_incomes': json.dumps(timeline_incomes),
         'timeline_balances': json.dumps(balances),
+        'budget_current_amount': round(current_balance, 2),
+        'budget_start_date': budget_start_date.isoformat(),
+        'today': today.strftime('%Y-%m-%d'),
     }
 
     return render(request, 'dashboard.html', context)
 
+
+from django.db.models import Avg, Q
+
+
+def get_monthly_avg(user):
+    # Grupowanie po miesiącu i sumowanie przychodów
+    monthly_incomes = (
+        DataTransaction.objects.filter(id_user=user, transaction_type='income')
+        .annotate(month=TruncMonth('transaction_date'))
+        .values('month')
+        .annotate(month_sum=Sum('income'))
+        .order_by('month')
+    )
+    # Grupowanie po miesiącu i sumowanie wydatków
+    monthly_expenses = (
+        DataTransaction.objects.filter(id_user=user, transaction_type='expense')
+        .annotate(month=TruncMonth('transaction_date'))
+        .values('month')
+        .annotate(month_sum=Sum('expense'))
+        .order_by('month')
+    )
+
+    # Liczymy średnią miesięczną przychodów
+    avg_income = (
+        sum(item['month_sum'] for item in monthly_incomes) / len(monthly_incomes)
+        if monthly_incomes else 0
+    )
+    # Liczymy średnią miesięczną wydatków
+    avg_expense = (
+        sum(item['month_sum'] for item in monthly_expenses) / len(monthly_expenses)
+        if monthly_expenses else 0
+    )
+
+    return round(avg_income, 2), round(avg_expense, 2)
+
+
 @login_required
 def budget_status_view(request):
     user = request.user
-    budget = Budget.objects.filter(user_id=user).first()
+    is_family = False
+    budget = None
+    current_balance = 0
 
-    if request.method == 'POST':
-        action = request.POST.get('action')
+    if hasattr(user, 'family') and user.family:
+        is_family = True
+        members = User.objects.filter(family=user.family)
+        budget = Budget.objects.filter(user_id__in=members).first()
 
-        if action == 'delete' and budget:
-            budget.delete()
-            return redirect('budget_status')
+        # Oblicz saldo rodziny: suma przychodów - suma wydatków
+        total_income = DataTransaction.objects.filter(
+            id_user__in=members, transaction_type='income'
+        ).aggregate(total=Sum('income'))['total'] or 0
 
-        if not budget:
-            initial_amount = request.POST.get('initial_amount')  # <-- poprawiona nazwa
-            init_date = request.POST.get('budget_init_date')
+        total_expense = DataTransaction.objects.filter(
+            id_user__in=members, transaction_type='expense'
+        ).aggregate(total=Sum('expense'))['total'] or 0
 
-            if initial_amount and init_date:
-                Budget.objects.create(
-                    user_id=user,
-                    budget_initial_amount=initial_amount,
-                    budget_init_date=init_date
-                )
-                return redirect('budget_status')
+        current_balance = total_income - total_expense
 
-    return render(request, 'budget_status.html', {'budget': budget})
+    else:
+        budget = Budget.objects.filter(user_id=user).first()
 
+        # Oblicz saldo pojedynczego użytkownika
+        total_income = DataTransaction.objects.filter(
+            id_user=user, transaction_type='income'
+        ).aggregate(total=Sum('income'))['total'] or 0
+
+        total_expense = DataTransaction.objects.filter(
+            id_user=user, transaction_type='expense'
+        ).aggregate(total=Sum('expense'))['total'] or 0
+
+        current_balance = total_income - total_expense
+
+    # Reszta Twojej logiki (obsługa POST, member_stats itp.) pozostaje bez zmian
+
+    member_stats = []
+    if is_family:
+        members = User.objects.filter(family=user.family)
+        for member in members:
+            avg_income, avg_expense = get_monthly_avg(member)
+            member_stats.append({
+                'name': member.name,
+                'avg_income': avg_income,
+                'avg_expense': avg_expense,
+            })
+
+    return render(request, 'budget_status.html', {
+        'budget': budget,
+        'is_family': is_family,
+        'member_stats': member_stats,
+        'current_balance': current_balance,  # Przekazujemy saldo do szablonu
+    })
 
 def get_supported_currencies():
     url = "https://api.frankfurter.app/currencies"
