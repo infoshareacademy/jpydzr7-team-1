@@ -14,6 +14,7 @@ urlpatterns = [
     # ==================== TRANSAKCJE ====================
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
     path('transactions/family/filter/', views.filtered_family_transactions, name='filtered-family-transactions'),
+    path('transactions/edit/<int:transaction_id>/', views.edit_transaction, name='edit-transaction'),
 
     # ==================== UŻYTKOWNICY ====================
     path('user/<str:login>/', views.user_detail_view, name='user_detail'),
