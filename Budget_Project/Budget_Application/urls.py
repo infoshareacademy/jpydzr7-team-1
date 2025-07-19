@@ -56,4 +56,6 @@ urlpatterns = [
     path("add_transaction/<str:type>", views.add_transaction, name="add_transaction"),
     # ==================== DODANIE KATEGORII ====================
     path("add_category/<str:type>", views.add_category, name="add_category"),
+    # =====================PRZELICZANIE WALUT =============
+    path('currency-converter/', views.currency_converter, name='currency_converter'),
 ]

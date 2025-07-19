@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block header_title %}
+<!-- Tu zostawiamy pusty blok, więc nagłówek się nie wyświetli -->
+{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card shadow-lg rounded-4 border-0">
+        <div class="card-body p-4">
+          <h3 class="card-title mb-4 text-center">💱 Przelicz walutę</h3>
+
+          {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="amount" class="form-label">Kwota</label>
+                <input type="number" step="0.01" min="0" name="amount" id="amount" class="form-control" placeholder="np. 100" value="{{ amount }}" required>
+              </div>
+              <div class="col-md-4">
+                <label for="from_currency" class="form-label">Z waluty</label>
+                <select name="from_currency" id="from_currency" class="form-select" required>
+                  {% for code, name in currencies.items %}
+                    <option value="{{ code }}" {% if code == from_currency %}selected{% endif %}>{{ code }} - {{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="to_currency" class="form-label">Na walutę</label>
+                <select name="to_currency" id="to_currency" class="form-select" required>
+                  {% for code, name in currencies.items %}
+                    <option value="{{ code }}" {% if code == to_currency %}selected{% endif %}>{{ code }} - {{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary btn-lg">Przelicz</button>
+            </div>
+          </form>
+
+          {% if result %}
+            <div class="alert alert-success text-center mt-4">
+              <strong>Wynik:</strong> {{ result }} {{ to_currency }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
