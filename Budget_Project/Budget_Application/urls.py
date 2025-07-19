@@ -15,6 +15,7 @@ urlpatterns = [
     # ==================== TRANSAKCJE ====================
     path('transactions/filter/', filtered_transactions, name='filtered-transactions'),
     path('transactions/family/filter/', views.filtered_family_transactions, name='filtered-family-transactions'),
+    path('transactions/edit/<int:transaction_id>/', views.edit_transaction, name='edit-transaction'),
 
     # ==================== UŻYTKOWNICY ====================
     path('user/<str:login>/', views.user_detail_view, name='user_detail'),
@@ -56,7 +57,11 @@ urlpatterns = [
     path("add_transaction/<str:type>", views.add_transaction, name="add_transaction"),
     # ==================== DODANIE KATEGORII ====================
     path("add_category/<str:type>", views.add_category, name="add_category"),
+
     # ==================== DODANIE STANU BUDŻETU ====================
     path("budget_status/", views.budget_status_view, name="budget_status"),
+
+    # =====================PRZELICZANIE WALUT =============
+    path('currency-converter/', views.currency_converter, name='currency_converter'),
 
 ]

@@ -11,10 +11,17 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
+
 from django.shortcuts import render
 from collections import defaultdict
 from django.db.models import Sum
 import json
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import requests
+
+from decimal import Decimal
 # Python standard library imports
 from datetime import datetime
 
@@ -235,6 +242,65 @@ def filtered_family_transactions(request):
     }
 
     return render(request, 'filtered_family_transactions.html', context)
+
+
+@require_http_methods(["POST"])
+def edit_transaction(request, transaction_id):
+    try:
+        # Pobierz transakcję
+        transaction = DataTransaction.objects.get(
+            transaction_id=transaction_id,
+            id_user=request.user
+        )
+
+        # Pobierz dane z formularza
+        transaction_date = request.POST.get('transaction_date')
+        amount_str = request.POST.get('amount')
+        transaction_type = request.POST.get('transaction_type')
+        description = request.POST.get('description', '')
+        category_name = request.POST.get('category', '')
+
+        # Walidacja i konwersja kwoty
+        if not amount_str or amount_str.strip() == '':
+            return JsonResponse({'success': False, 'error': 'Kwota jest wymagana!'})
+        try:
+            amount = float(amount_str.replace(',', '.'))
+            if amount <= 0:
+                return JsonResponse({'success': False, 'error': 'Jeśli chcesz dodać wydatek, zrób to z poziomu "Typ transakcji".'})
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'Nieprawidłowa kwota!'})
+
+        # Pobierz obiekt kategorii
+        category_obj = None
+        if category_name:
+            try:
+                category_obj = Categories.objects.get(
+                    category_name=category_name,
+                    user_id__family=request.user.family
+                )
+            except Categories.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Wybrana kategoria nie istnieje'})
+
+        # Aktualizuj transakcję
+        transaction.transaction_date = transaction_date
+        transaction.description = description
+        transaction.category = category_obj
+        transaction.transaction_type = transaction_type
+
+        # Ustaw kwoty na podstawie typu
+        if transaction_type == 'income':
+            transaction.income = amount
+            transaction.expense = None
+        else:
+            transaction.expense = amount
+            transaction.income = None
+
+        transaction.save()
+        return JsonResponse({'success': True})
+    except DataTransaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transakcja nie została znaleziona'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Wystąpił nieznany błąd: {str(e)}'})
 
 
 # ---------USERS---LOGIN---REGISTRATION------->
@@ -666,34 +732,6 @@ def add_category(request, type):
     })
 
 
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.db.models import Sum
-from collections import defaultdict
-from decimal import Decimal
-import json
-
-from .models import DataTransaction, Budget, User
-
-import json
-from collections import defaultdict
-from decimal import Decimal
-
-from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
-from django.shortcuts import render
-
-from .models import DataTransaction, Budget, User  # Upewnij się, że masz właściwe importy
-
-
-from collections import defaultdict
-from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
-from django.shortcuts import render
-import json
-
 @login_required
 def dashboard(request):
     user = request.user
@@ -780,4 +818,63 @@ def budget_status_view(request):
                 return redirect('budget_status')
 
     return render(request, 'budget_status.html', {'budget': budget})
+
+
+def get_supported_currencies():
+    url = "https://api.frankfurter.app/currencies"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception("Błąd pobierania walut.")
+    return response.json()
+
+
+def convert_currency(amount, from_currency, to_currency):
+    if from_currency == to_currency:
+        return amount
+
+    url = "https://api.frankfurter.app/latest"
+    params = {
+        "amount": amount,
+        "from": from_currency,
+        "to": to_currency
+    }
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise Exception("Błąd przeliczania waluty.")
+
+    data = response.json()
+    return data["rates"][to_currency]
+
+
+def currency_converter(request):
+    result = None
+    error = None
+    currencies = {}
+    from_currency = 'PLN'  # domyślna wartość
+    to_currency = ''
+    amount = ''
+
+    try:
+        currencies = get_supported_currencies()
+    except Exception as e:
+        error = str(e)
+
+    if request.method == 'POST':
+        try:
+            amount = request.POST.get('amount')
+            from_currency = request.POST.get('from_currency') or "PLN"
+            to_currency = request.POST.get('to_currency')
+
+            result = convert_currency(float(amount), from_currency, to_currency)
+        except Exception as e:
+            error = str(e)
+
+    return render(request, 'currency_converter.html', {
+        'currencies': currencies,
+        'result': result,
+        'error': error,
+        'amount': amount,
+        'from_currency': from_currency,
+        'to_currency': to_currency,
+        'hide_sidebar': True
 
