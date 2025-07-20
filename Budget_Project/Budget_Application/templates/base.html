@@ -443,17 +443,6 @@
         allTransactionsLink.setAttribute('data-target', targetPath);
     }
 
-    function setInitialToggleState() {
-        const toggle = document.querySelector(SELECTORS.viewToggleSwitch);
-        const currentPath = window.location.pathname;
-        const isFamilyView = currentPath.includes('/transactions/family/') ||
-                           currentPath.includes('/expenses/family/') ||
-                           currentPath.includes('/incomes/family/');
-
-        toggle.checked = isFamilyView;
-        updateAllTransactionsLink();
-    }
-
     // Initialize everything when DOM is ready
     $(document).ready(function () {
         initializeDatepickers();
