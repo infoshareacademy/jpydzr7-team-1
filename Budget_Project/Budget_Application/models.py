@@ -294,6 +294,8 @@ class Budget(models.Model):
         current = (self.budget_initial_amount or 0) + total_income - total_expense
         return round(current, 2)
 
+
+
 import random
 from datetime import date, timedelta
 @receiver(post_save, sender=User)

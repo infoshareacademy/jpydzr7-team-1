@@ -460,15 +460,17 @@ class AddTransaction(forms.ModelForm):
         self.fields['income'].required = True
         self.fields['expense'].required = True
         if hasattr(user, 'family') and user.family:
+            # Filtrujemy po rodzinie i stosujemy distinct, aby uniknąć duplikatów
             self.fields['category'].queryset = Categories.objects.filter(
                 category_type=form_type,
                 user_id__family=user.family
-            )
+            ).distinct()
         else:
+            # Filtrujemy po użytkowniku i stosujemy distinct, aby uniknąć duplikatów
             self.fields['category'].queryset = Categories.objects.filter(
                 category_type=form_type,
                 user_id=user
-            )
+            ).distinct()
         self.fields['transaction_date'].initial = timezone.now().date().isoformat()
         self.fields['description'].required = False
         self.fields['transaction_type'].required = True

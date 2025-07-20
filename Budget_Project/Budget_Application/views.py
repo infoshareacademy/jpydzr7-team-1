@@ -757,9 +757,11 @@ def add_category(request, type):
         edit_form = AddCategory(instance=edytowana, user=request.user, form_type=type)
 
     if hasattr(request.user, 'family') and request.user.family:
-        kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at')
+        # Filtrujemy po rodzinie i stosujemy distinct, żeby uniknąć duplikatów
+        kategorie = Categories.objects.filter(user_id__family=request.user.family).order_by('created_at').distinct()
     else:
-        kategorie = Categories.objects.filter(user_id=request.user).order_by('created_at')
+        # Filtrujemy po użytkowniku i stosujemy distinct, żeby uniknąć duplikatów
+        kategorie = Categories.objects.filter(user_id=request.user).order_by('created_at').distinct()
 
     return render(request, 'add_category.html', {
         'form': form,
@@ -881,20 +883,26 @@ def dashboard(request):
 
 
 from django.db.models import Avg, Q
+from django.db.models import Count
 
+from django.db.models.functions import TruncMonth
+
+from django.db.models import Sum, F
+from django.db.models.functions import TruncMonth
 
 def get_monthly_avg(user):
-    # Grupowanie po miesiącu i sumowanie przychodów
+    # Obliczamy miesięczne przychody
     monthly_incomes = (
-        DataTransaction.objects.filter(id_user=user, transaction_type='income')
+        DataTransaction.objects.filter(id_user=user, income__isnull=False)
         .annotate(month=TruncMonth('transaction_date'))
         .values('month')
         .annotate(month_sum=Sum('income'))
         .order_by('month')
     )
-    # Grupowanie po miesiącu i sumowanie wydatków
+
+    # Obliczamy miesięczne wydatki
     monthly_expenses = (
-        DataTransaction.objects.filter(id_user=user, transaction_type='expense')
+        DataTransaction.objects.filter(id_user=user, expense__isnull=False)
         .annotate(month=TruncMonth('transaction_date'))
         .values('month')
         .annotate(month_sum=Sum('expense'))
@@ -913,12 +921,11 @@ def get_monthly_avg(user):
         if monthly_expenses else 0
     )
 
-    # Upewniamy się, że średnie wartości są zaokrąglone
+    # Zaokrąglamy wyniki do dwóch miejsc po przecinku
     avg_income = round(avg_income, 2)
     avg_expense = round(avg_expense, 2)
 
     return avg_income, avg_expense
-
 
 @login_required()
 def budget_status_view(request):
