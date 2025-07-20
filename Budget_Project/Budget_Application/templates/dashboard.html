@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .chart-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .chart-container {
+      min-width: 400px;
+      max-width: 400px;
+    }
+
+    .date-filter-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .date-form {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .chart-title {
+      line-height: 1.2;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+{% include 'navbar.html' %}
+
+<div class="container mt-4">
+  {% if message %}
+    <div class="alert alert-warning text-center">{{ message }}</div>
+  {% endif %}
+
+  {% if budget_current_amount %}
+    <div class="alert alert-success text-center">
+      <strong>Stan budżetu:</strong> {{ budget_current_amount }} PLN
+    </div>
+  {% endif %}
+
+  {% if budget_start_date %}
+    <div class="date-filter-container">
+      <form method="get" class="date-form" novalidate>
+        <label>
+          Od:
+          <input type="date" name="start_date"
+                 value="{{ start_date }}"
+                 min="{{ budget_start_date }}"
+                 max="{{ end_date|default:today }}">
+        </label>
+        <label>
+          Do:
+          <input type="date" name="end_date"
+                 value="{{ end_date }}"
+                 min="{{ start_date|default:budget_start_date }}"
+                 max="{{ today }}">
+        </label>
+        <button type="submit" class="btn btn-primary">Filtruj</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if timeline_dates %}
+    <div class="chart-row">
+      <div class="chart-container">
+        <h4 class="chart-title">Przychody</h4>
+        <canvas id="incomeChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h4 class="chart-title">Wydatki</h4>
+        <canvas id="expenseChart"></canvas>
+      </div>
+    </div>
+
+    <div class="container mt-5">
+      <h4 class="text-center">Saldo budżetu, przychody i wydatki w czasie</h4>
+      <canvas id="timelineChart" height="100"></canvas>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  const expenseLabels = {{ expense_labels|safe }};
+  const expenseValues = {{ expense_values|safe }};
+  const incomeLabels = {{ income_labels|safe }};
+  const incomeValues = {{ income_values|safe }};
+  const timelineLabels = {{ timeline_dates|safe }};
+  const timelineExpenses = {{ timeline_expenses|safe }};
+  const timelineIncomes = {{ timeline_incomes|safe }};
+  const timelineBalances = {{ timeline_balances|safe }};
+
+  function generateColors(length) {
+    const colors = [];
+    for (let i = 0; i < length; i++) {
+      const r = Math.floor(Math.random() * 200 + 30);
+      const g = Math.floor(Math.random() * 200 + 30);
+      const b = Math.floor(Math.random() * 200 + 30);
+      colors.push(`rgba(${r}, ${g}, ${b}, 0.6)`);
+    }
+    return colors;
+  }
+
+  if (incomeLabels.length > 0) {
+    new Chart(document.getElementById('incomeChart').getContext('2d'), {
+      type: 'pie',
+      data: {
+        labels: incomeLabels,
+        datasets: [{
+          data: incomeValues,
+          backgroundColor: generateColors(incomeLabels.length),
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+  }
+
+  if (expenseLabels.length > 0) {
+    new Chart(document.getElementById('expenseChart').getContext('2d'), {
+      type: 'pie',
+      data: {
+        labels: expenseLabels,
+        datasets: [{
+          data: expenseValues,
+          backgroundColor: generateColors(expenseLabels.length),
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+  }
+
+  if (timelineLabels.length > 0) {
+    new Chart(document.getElementById('timelineChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: timelineLabels,
+        datasets: [
+          {
+            label: 'Saldo budżetu',
+            data: timelineBalances,
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0,0,255,0.1)',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'Wydatki',
+            data: timelineExpenses,
+            borderColor: 'red',
+            backgroundColor: 'rgba(255,0,0,0.1)',
+            tension: 0.3,
+            fill: false
+          },
+          {
+            label: 'Przychody',
+            data: timelineIncomes,
+            borderColor: 'green',
+            backgroundColor: 'rgba(0,255,0,0.1)',
+            tension: 0.3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Kwota (PLN)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Data'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Dynamiczne ograniczenia w datepickerach
+  const startInput = document.querySelector('input[name="start_date"]');
+  const endInput = document.querySelector('input[name="end_date"]');
+
+  if (startInput && endInput) {
+    startInput.addEventListener('change', () => {
+      endInput.min = startInput.value || '{{ budget_start_date|default:"" }}';
+      if (endInput.value && endInput.value < endInput.min) {
+        endInput.value = endInput.min;
+      }
+    });
+
+    endInput.addEventListener('change', () => {
+      startInput.max = endInput.value || '{{ today|default:"" }}';
+      if (startInput.value && startInput.value > startInput.max) {
+        startInput.value = startInput.max;
+      }
+    });
+  }
+</script>
+</body>
+</html>

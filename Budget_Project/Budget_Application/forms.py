@@ -1,3 +1,6 @@
+from django.db.models import Q
+from django.utils import timezone
+
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -449,17 +452,26 @@ class AddTransaction(forms.ModelForm):
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
         family = getattr(user, 'family', None)
-        if family:
+        if family is not None and user.role !="kid":
             self.fields['id_user'].queryset = User.objects.filter(family=family)
         else:
             self.fields['id_user'].queryset = User.objects.filter(pk=user.pk)
         self.fields['id_user'].initial = user.pk
         self.fields['income'].required = True
         self.fields['expense'].required = True
-        self.fields['category'].queryset = Categories.objects.filter(
-            category_type=form_type,
-            user_id__family=user.family
-        )
+        if hasattr(user, 'family') and user.family:
+            # Filtrujemy po rodzinie i stosujemy distinct, aby uniknąć duplikatów
+            self.fields['category'].queryset = Categories.objects.filter(
+                category_type=form_type,
+                user_id__family=user.family
+            ).distinct()
+        else:
+            # Filtrujemy po użytkowniku i stosujemy distinct, aby uniknąć duplikatów
+            self.fields['category'].queryset = Categories.objects.filter(
+                category_type=form_type,
+                user_id=user
+            ).distinct()
+        self.fields['transaction_date'].initial = timezone.now().date().isoformat()
         self.fields['description'].required = False
         self.fields['transaction_type'].required = True
         if form_type == 'income':
@@ -485,7 +497,7 @@ class AddTransaction(forms.ModelForm):
 
     class Meta:
         model = DataTransaction
-        fields = ['id_user','transaction_date', 'income', 'expense', 'category', 'description', 'transaction_type']
+        fields = ['category', 'id_user','transaction_date', 'income', 'expense', 'description', 'transaction_type']
         widgets = {
             'transaction_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'income': forms.NumberInput(attrs={'class': 'form-control'}),
@@ -505,36 +517,42 @@ class AddTransaction(forms.ModelForm):
         }
 
 class AddCategory(forms.ModelForm):
-#TODO: dodajmy walidację na dublowanie kategorii
 
-    def __init__(self, *args, **kwargs):# pobieramy usera z widoku
+    def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
 
     def clean_category_name(self):
         category_name = self.cleaned_data['category_name']
-        family = self.user.family
-        # Sprawdzamy, czy kategoria o takiej nazwie już istnieje dla danego użytkownika
-        qs = Categories.objects.filter(category_name__iexact=category_name, user_id__family=family)
 
-        # Jeśli edycja, to wykluczamy obecną instancję
+        # Domyślny filtr: ignorujemy wielkość liter
+        query = Q(category_name__iexact=category_name)
+
+        # Jeżeli użytkownik ma rodzinę – szukaj po rodzinie
+        if hasattr(self.user, 'family') and self.user.family:
+            query &= Q(user_id__family=self.user.family)
+        else:
+            # Jeżeli nie ma rodziny – szukaj tylko po nim
+            query &= Q(user_id=self.user)
+
+        qs = Categories.objects.filter(query)
+
+        # Jeśli edycja, wyklucz bieżącą instancję
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
 
         if qs.exists():
-            raise ValidationError("Ta kategoria już istnieje w Twojej rodzinie.")
-        return category_name
+            raise ValidationError("Ta kategoria już istnieje (dla Ciebie lub w Twojej rodzinie).")
 
+        return category_name
 
     class Meta:
         model = Categories
         fields = ['category_name']
         widgets = {
-        'category_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'category_name': forms.TextInput(attrs={'class': 'form-control'}),
         }
         labels = {
-        'category_name': 'Nazwa kategorii'
-
+            'category_name': 'Nazwa kategorii'
         }
-
