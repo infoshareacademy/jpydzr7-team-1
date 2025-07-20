@@ -777,7 +777,7 @@ def dashboard(request):
     user = request.user
 
     # Pobierz budżet i transakcje (jak wcześniej)
-    if user.family:
+    if user.family and user.role != "kid":
         members = User.objects.filter(family=user.family)
         qs = DataTransaction.objects.filter(id_user__in=members)
         budget = Budget.objects.filter(user_id__in=members).first()
@@ -934,7 +934,7 @@ def budget_status_view(request):
     budget = None
     current_balance = 0
 
-    if hasattr(user, 'family') and user.family:
+    if hasattr(user, 'family') and user.family and user.role != "kid":
         is_family = True
         members = User.objects.filter(family=user.family)
         budget = Budget.objects.filter(user_id__in=members).first()
@@ -967,7 +967,7 @@ def budget_status_view(request):
 
     # 🟢 STATYSTYKI CZŁONKÓW
     member_stats = []
-    if is_family:
+    if is_family and user.role != "kid":
         members = User.objects.filter(family=user.family)
         for member in members:
             avg_income, avg_expense = get_monthly_avg(member)

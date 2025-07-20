@@ -10,7 +10,7 @@
     {% include 'navbar.html' %}
 
     <div class="container mt-4">
-        <h2>{% if is_family %}Budżet rodziny{% else %}Twój budżet{% endif %}</h2>
+        <h2>{% if is_family and user.role != "kid"%}Budżet rodziny{% else %}Twój budżet{% endif %}</h2>
 
         {% if budget %}
             <div class="card mb-3">
@@ -56,7 +56,7 @@
             </form>
         {% endif %}
 
-        {% if is_family %}
+        {% if is_family and user.role != "kid"%}
             <hr />
             <h3>Średnie miesięczne przychody i wydatki rodziny i członków</h3>
             <table class="table table-striped mt-3">

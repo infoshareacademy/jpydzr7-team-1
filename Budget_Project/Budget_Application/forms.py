@@ -452,7 +452,7 @@ class AddTransaction(forms.ModelForm):
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
         family = getattr(user, 'family', None)
-        if family:
+        if family is not None and user.role !="kid":
             self.fields['id_user'].queryset = User.objects.filter(family=family)
         else:
             self.fields['id_user'].queryset = User.objects.filter(pk=user.pk)

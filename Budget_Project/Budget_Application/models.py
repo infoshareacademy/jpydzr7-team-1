@@ -269,7 +269,7 @@ class Budget(models.Model):
         today = timezone.now().date()
 
         # Sprawdź, czy użytkownik należy do rodziny
-        if self.user_id.family:
+        if self.user_id.family is not None and self.user_id.role != "kid":
             # Jeśli tak, weź wszystkich członków rodziny
             family_members = User.objects.filter(family=self.user_id.family)
             # Zbierz transakcje dla wszystkich członków rodziny, do dzisiejszej daty
